@@ -1,0 +1,1 @@
+export { SpotlightBlock } from './AllBlocks';

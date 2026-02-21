@@ -1,0 +1,1 @@
+export { PromptMasterclassBlock } from './AllBlocks';
