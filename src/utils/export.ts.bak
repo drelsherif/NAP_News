@@ -1,0 +1,783 @@
+import type { Newsletter, Block } from '../types';
+
+function escapeHtml(str: string): string {
+  return (str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function getExportCss(theme: Newsletter['theme']): string {
+  // Purpose: match the builder preview aesthetics as closely as possible, but
+  // ensure the exported document scrolls normally and contains no editor-only UX.
+  return `
+:root{
+  --color-primary:${theme.primary};
+  --color-secondary:${theme.secondary};
+  --color-accent:${theme.accent};
+  --color-bg:${theme.background};
+  --color-surface:${theme.surface};
+  --color-border:${theme.border};
+  --color-text:${theme.text};
+  --color-muted:${theme.muted};
+  --font-display:${theme.fontDisplay};
+  --font-body:${theme.fontBody};
+  --font-mono:${theme.fontMono};
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:auto !important; overflow:auto !important}
+body{
+  margin:0;
+  font-family:var(--font-body);
+  color:var(--color-text);
+  background:var(--color-bg);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+a{color:var(--color-accent)}
+img{max-width:100%;height:auto}
+.nap-shell{max-width:900px;margin:0 auto;background:var(--color-surface)}
+/* Remove any editing affordances if present */
+[contenteditable]{outline:none !important}
+[data-editor-ui],[data-dnd-dragging]{display:none !important}
+
+/* Responsive grid fallback */
+@media(max-width:700px){
+  .nap-grid{display:block !important}
+  .nap-grid > *{margin-bottom:16px}
+}
+
+/* Ticker animation */
+@keyframes nap_ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.nap-ticker-track{
+  display:flex;
+  white-space:nowrap;
+  will-change:transform;
+}
+
+/* Sidebar scrolling */
+.nap-scroll{overflow:auto}
+`;
+}
+
+function parseRssXml(xml: string): { title: string; url: string; date?: string }[] {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+    if (doc.querySelector('parsererror')) return [];
+
+    const items = Array.from(doc.querySelectorAll('item'));
+    if (items.length) {
+      return items
+        .map((el) => ({
+          title: el.querySelector('title')?.textContent?.trim() || '',
+          url: el.querySelector('link')?.textContent?.trim() || '',
+          date: el.querySelector('pubDate')?.textContent?.trim() || undefined,
+        }))
+        .filter((x) => !!x.title);
+    }
+
+    // Atom
+    const entries = Array.from(doc.querySelectorAll('entry'));
+    return entries
+      .map((el) => ({
+        title: el.querySelector('title')?.textContent?.trim() || '',
+        url: el.querySelector('link')?.getAttribute('href') || el.querySelector('link')?.textContent?.trim() || '',
+        date: el.querySelector('updated')?.textContent?.trim() || el.querySelector('published')?.textContent?.trim() || undefined,
+      }))
+      .filter((x) => !!x.title);
+  } catch {
+    return [];
+  }
+}
+
+function blockToHtml(block: Block, theme: Newsletter['theme']): string {
+  const b = block as any;
+
+  switch (block.type) {
+    case 'header': {
+      const bg = b.backgroundStyle === 'solid'
+        ? theme.primary
+        : `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 60%, ${theme.accent}44 100%)`;
+
+      return `
+<div style="background:${bg};padding:48px 40px;text-align:center;position:relative;overflow:hidden">
+  <svg style="position:absolute;bottom:0;left:0;right:0;opacity:0.08" viewBox="0 0 800 60" fill="none" preserveAspectRatio="none" height="60">
+    <path d="M0 40 Q200 0 400 30 Q600 60 800 20 L800 60 L0 60Z" fill="white" />
+  </svg>
+  ${(b.logoDataUrl || b.logoUrl) ? `<div style="margin-bottom:20px"><img src="${escapeHtml(b.logoDataUrl || b.logoUrl)}" alt="Logo" style="max-height:60px;max-width:240px;border-radius:8px"></div>` : ''}
+  <div style="font-family:${theme.fontMono};font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:12px">${escapeHtml(b.issueNumber)} · ${escapeHtml(b.issueDate)}</div>
+  <h1 style="font-family:${theme.fontDisplay};font-size:46px;font-weight:400;color:#fff;margin:0 0 10px;letter-spacing:-0.02em;line-height:1.1">${escapeHtml(b.title)}</h1>
+  <p style="font-family:${theme.fontDisplay};font-size:20px;font-style:italic;color:rgba(255,255,255,0.85);margin:0 0 18px;line-height:1.3">${escapeHtml(b.subtitle)}</p>
+  <div style="height:1px;background:rgba(255,255,255,0.2);max-width:280px;margin:0 auto 18px"></div>
+  <p style="font-family:${theme.fontBody};font-size:13px;color:rgba(255,255,255,0.65);margin:0;letter-spacing:0.02em">${escapeHtml(b.tagline)}</p>
+</div>`;
+    }
+
+    case 'ticker': {
+      const dur = ({ slow: 60, medium: 36, fast: 20 } as any)[b.speed] || 36;
+
+      // The exported HTML keeps RSS connectivity via a small runtime script that hydrates
+      // this container (CORS-safe via allorigins).
+      const dataRss = escapeHtml(JSON.stringify((b.rssUrls || []).filter(Boolean)));
+      const dataLinks = escapeHtml(JSON.stringify((b.links || []).filter((x: any) => x?.text)));
+
+      const seed =
+        b.sourceMode === 'rss'
+          ? (b.links || []).map((x: any) => `<a class="nap-ticker-item" href="${escapeHtml(x.url || '#')}" target="_blank" rel="noopener noreferrer" style="font-family:${theme.fontMono};font-size:12px;color:${b.textColor || '#fff'};padding:0 32px;letter-spacing:0.04em;display:inline-flex;align-items:center;gap:10px;text-decoration:none"><span style="width:5px;height:5px;border-radius:50%;background:${theme.accent};display:inline-block;flex-shrink:0"></span>${escapeHtml(x.text)}<span style="font-size:10px;opacity:0.6">↗</span></a>`).join('')
+          : (b.useLinks ? (b.links || []) : []).map((x: any) => `<a class="nap-ticker-item" href="${escapeHtml(x.url || '#')}" target="_blank" rel="noopener noreferrer" style="font-family:${theme.fontMono};font-size:12px;color:${b.textColor || '#fff'};padding:0 32px;letter-spacing:0.04em;display:inline-flex;align-items:center;gap:10px;text-decoration:none"><span style="width:5px;height:5px;border-radius:50%;background:${theme.accent};display:inline-block;flex-shrink:0"></span>${escapeHtml(x.text)}<span style="font-size:10px;opacity:0.6">↗</span></a>`).join('');
+
+      const manual = (!b.useLinks ? (b.items || []) : []).map((t: string) => `<span class="nap-ticker-item" style="font-family:${theme.fontMono};font-size:12px;color:${b.textColor || '#fff'};padding:0 32px;letter-spacing:0.04em;display:inline-flex;align-items:center;gap:10px"><span style="width:5px;height:5px;border-radius:50%;background:${theme.accent};display:inline-block;flex-shrink:0"></span>${escapeHtml(t)}</span>`).join('');
+
+      return `
+<div class="nap-ticker" data-speed="${escapeHtml(b.speed)}" data-duration="${dur}" data-source="${escapeHtml(b.sourceMode)}" data-rss='${dataRss}' data-rss-max="${escapeHtml(String(b.rssMaxItems || 20))}" data-links='${dataLinks}'
+  style="background:${escapeHtml(b.backgroundColor || theme.primary)};overflow:hidden;height:40px;display:flex;align-items:center">
+  <div class="nap-ticker-track" style="animation:nap_ticker ${dur}s linear infinite">
+    ${seed || manual}
+    ${seed || manual}
+  </div>
+</div>`;
+    }
+
+    case 'section-divider': {
+      if (b.style === 'bold') {
+        return `
+<div style="background:${theme.primary};padding:18px 40px;display:flex;align-items:center;gap:16px">
+  ${b.number > 0 ? `<span style="font-family:${theme.fontMono};font-size:32px;font-weight:300;color:rgba(255,255,255,0.25);line-height:1">${escapeHtml(String(b.number).padStart(2, '0'))}</span>` : ''}
+  <div>
+    <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:2px">Section</div>
+    <div style="font-family:${theme.fontDisplay};font-size:22px;color:#fff;line-height:1.15">${escapeHtml(b.label)}</div>
+  </div>
+</div>`;
+      }
+
+      return `
+<div style="padding:32px 40px 16px">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:${b.description ? 10 : 0}px">
+    <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:${theme.muted};white-space:nowrap">
+      <span>${b.number > 0 ? `0${b.number} —— ` : '—— '}</span>${escapeHtml(b.label)}<span> ——</span>
+    </div>
+    <div style="flex:1;height:1px;background:linear-gradient(90deg, ${theme.border}, transparent)"></div>
+  </div>
+  ${b.description ? `<p style="font-family:${theme.fontBody};font-size:14px;color:${theme.muted};margin:0;line-height:1.6">${escapeHtml(b.description)}</p>` : ''}
+</div>`;
+    }
+
+    case 'article-grid': {
+      const cols = b.columns || 2;
+      return `
+<div style="padding:24px 40px">
+  ${b.sectionTitle ? `<h2 style="font-family:${theme.fontDisplay};font-size:26px;color:${theme.text};margin:0 0 20px;font-weight:400">${escapeHtml(b.sectionTitle)}</h2>` : ''}
+  <div class="nap-grid" style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:18px">
+    ${(b.articles || []).map((art: any) => `
+      <div style="border:1px solid ${theme.border};border-radius:14px;background:${theme.surface};overflow:hidden">
+        ${art.imageUrl ? `<img src="${escapeHtml(art.imageUrl)}" alt="${escapeHtml(art.title)}" style="width:100%;height:160px;object-fit:cover">` : ''}
+        <div style="padding:18px">
+          <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${theme.muted};margin-bottom:8px">
+            ${escapeHtml(art.source || '')}${art.evidenceLevel ? ` · ${escapeHtml(art.evidenceLevel)}` : ''}
+          </div>
+          <h3 style="font-family:${theme.fontDisplay};font-size:20px;color:${theme.text};margin:0 0 10px;line-height:1.25;font-weight:400">
+            ${art.url ? `<a href="${escapeHtml(art.url)}" target="_blank" rel="noopener" style="color:${theme.text};text-decoration:none">${escapeHtml(art.title)}</a>` : escapeHtml(art.title)}
+          </h3>
+          ${art.summary ? `<p style="font-family:${theme.fontBody};font-size:14px;color:${theme.muted};margin:0 0 12px;line-height:1.65">${escapeHtml(art.summary)}</p>` : ''}
+          ${art.clinicalContext ? `<div style="padding:12px;background:${theme.background};border-radius:10px;margin-bottom:10px"><p style="font-family:${theme.fontBody};font-size:13px;color:${theme.text};margin:0"><strong>Clinical Context:</strong> ${escapeHtml(art.clinicalContext)}</p></div>` : ''}
+          ${art.myTake ? `<p style="font-family:${theme.fontBody};font-size:13px;color:${theme.secondary};font-style:italic;margin:0;border-left:3px solid ${theme.accent};padding-left:10px;line-height:1.6">${escapeHtml(art.myTake)}</p>` : ''}
+          ${art.url ? `<a href="${escapeHtml(art.url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:14px;font-family:${theme.fontBody};font-size:12px;color:${theme.accent};font-weight:700;text-decoration:none">Read full paper →</a>` : ''}
+        </div>
+      </div>
+    `).join('')}
+  </div>
+</div>`;
+    }
+
+    case 'spotlight': {
+      const art = b.article || {};
+      const accent = b.accentColor || theme.accent;
+      const img = art.imageUrl;
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="background:linear-gradient(135deg, ${accent}22, ${theme.surface});padding:18px 20px;border-bottom:1px solid ${theme.border}">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${theme.muted}">Spotlight</div>
+      <div style="font-family:${theme.fontDisplay};font-size:24px;margin-top:6px;color:${theme.text};font-weight:400">${escapeHtml(art.title || b.title || 'Spotlight')}</div>
+    </div>
+    <div style="display:flex;gap:18px;align-items:flex-start;padding:20px">
+      ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(art.title || '')}" style="width:240px;height:160px;object-fit:cover;border-radius:12px;flex-shrink:0">` : ''}
+      <div style="flex:1">
+        ${art.summary ? `<p style="font-family:${theme.fontBody};font-size:14px;color:${theme.muted};margin:0 0 10px;line-height:1.7">${escapeHtml(art.summary)}</p>` : ''}
+        ${art.myTake ? `<p style="font-family:${theme.fontBody};font-size:14px;color:${theme.text};margin:0;border-left:3px solid ${accent};padding-left:12px">${escapeHtml(art.myTake)}</p>` : ''}
+        ${(art.url) ? `<div style="margin-top:12px"><a href="${escapeHtml(art.url)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:${accent};font-weight:700;text-decoration:none">Open source →</a></div>` : ''}
+      </div>
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'ethics-split': {
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="padding:18px 20px;background:${theme.background};border-bottom:1px solid ${theme.border}">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${theme.muted}">${escapeHtml(b.subheading || 'Ethics')}</div>
+      <div style="font-family:${theme.fontDisplay};font-size:26px;color:${theme.text};margin-top:6px;font-weight:400">${escapeHtml(b.heading || '')}</div>
+    </div>
+    <div class="nap-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+      <div style="padding:18px 20px;border-right:1px solid ${theme.border}">
+        <div style="font-family:${theme.fontDisplay};font-size:18px;color:${theme.text};margin-bottom:10px">${escapeHtml(b.leftTitle || '')}</div>
+        <div style="font-family:${theme.fontBody};font-size:14px;color:${theme.muted};line-height:1.75">${escapeHtml(b.leftContent || '')}</div>
+      </div>
+      <div style="padding:18px 20px">
+        <div style="font-family:${theme.fontDisplay};font-size:18px;color:${theme.text};margin-bottom:10px">${escapeHtml(b.rightTitle || '')}</div>
+        <div style="font-family:${theme.fontBody};font-size:14px;color:${theme.muted};line-height:1.75">${escapeHtml(b.rightContent || '')}</div>
+      </div>
+    </div>
+    ${b.clinicalPerspective ? `<div style="padding:16px 20px;border-top:1px solid ${theme.border};background:${theme.surface}">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${theme.muted};margin-bottom:8px">Clinical Perspective</div>
+      <div style="font-family:${theme.fontBody};font-size:14px;color:${theme.text};line-height:1.75">${escapeHtml(b.clinicalPerspective)}</div>
+      ${b.url ? `<div style="margin-top:10px"><a href="${escapeHtml(b.url)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:${theme.accent};font-weight:700;text-decoration:none">Source: ${escapeHtml(b.source || 'Link')} →</a></div>` : ''}
+    </div>` : ''}
+  </div>
+</div>`;
+    }
+
+    case 'image': {
+      const imgSrc = b.dataUrl || b.url;
+      if (!imgSrc) return '';
+      const width = b.width === 'full' ? '100%' : b.width === 'wide' ? '80%' : b.width === 'medium' ? '60%' : '40%';
+      return `
+<div style="padding:16px 40px;text-align:${escapeHtml(b.alignment || 'center')}">
+  ${b.linkUrl ? `<a href="${escapeHtml(b.linkUrl)}" target="_blank" rel="noopener">` : ''}
+  <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(b.alt || '')}" style="max-width:${width};border-radius:${Number(b.borderRadius ?? 12)}px;display:inline-block">
+  ${b.linkUrl ? `</a>` : ''}
+  ${b.caption ? `<div style="font-family:${theme.fontBody};font-size:12px;color:${theme.muted};margin-top:8px">${escapeHtml(b.caption)}</div>` : ''}
+</div>`;
+    }
+
+    case 'text': {
+      // b.html is intentionally trusted as authored content (already stored in state).
+      const maxW = b.maxWidth === 'reading' ? '720px' : b.maxWidth === 'narrow' ? '560px' : '100%';
+      return `<div style="padding:16px 40px;max-width:${maxW};margin:0 auto;text-align:${escapeHtml(b.alignment || 'left')};font-family:${theme.fontBody};color:${theme.text};line-height:1.75">${b.html || ''}</div>`;
+    }
+
+    case 'html-embed': {
+      return `
+<div style="padding:16px 40px">
+  ${b.label ? `<div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${theme.muted};margin-bottom:10px">${escapeHtml(b.label)}</div>` : ''}
+  <div>${b.html || ''}</div>
+</div>`;
+    }
+
+    case 'prompt-masterclass': {
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="background:${theme.background};padding:16px 20px;border-bottom:1px solid ${theme.border}">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${theme.muted}">${escapeHtml(b.step || '')}</div>
+      <div style="font-family:${theme.fontDisplay};font-size:24px;color:${theme.text};margin-top:6px;font-weight:400">${escapeHtml(b.heading || '')}</div>
+    </div>
+    <div style="padding:18px 20px">
+      ${b.framework ? `<p style="margin:0 0 14px;font-family:${theme.fontBody};font-size:14px;color:${theme.text};line-height:1.7"><strong>Framework:</strong> ${escapeHtml(b.framework)}</p>` : ''}
+      <div class="nap-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="border:1px solid ${theme.border};border-radius:12px;padding:14px;background:${theme.surface}">
+          <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${theme.muted};margin-bottom:8px">Bad prompt</div>
+          <pre style="white-space:pre-wrap;margin:0;font-family:${theme.fontMono};font-size:12px;color:${theme.text};line-height:1.6">${escapeHtml(b.badPrompt || '')}</pre>
+        </div>
+        <div style="border:1px solid ${theme.border};border-radius:12px;padding:14px;background:${theme.surface}">
+          <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${theme.muted};margin-bottom:8px">Good prompt</div>
+          <pre style="white-space:pre-wrap;margin:0;font-family:${theme.fontMono};font-size:12px;color:${theme.text};line-height:1.6">${escapeHtml(b.goodPrompt || '')}</pre>
+        </div>
+      </div>
+      ${b.explanation ? `<p style="margin:14px 0 0;font-family:${theme.fontBody};font-size:14px;color:${theme.muted};line-height:1.75">${escapeHtml(b.explanation)}</p>` : ''}
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'sbar-prompt': {
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="background:${theme.primary};padding:14px 18px">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.7)">Prompt framework</div>
+      <div style="font-family:${theme.fontDisplay};font-size:22px;color:#fff;margin-top:6px;font-weight:400">${escapeHtml(b.heading || '')}</div>
+    </div>
+    <div style="padding:18px 18px">
+      ${(b.steps || []).map((s: any) => `
+        <div style="display:flex;gap:14px;padding:10px 0;border-bottom:1px solid ${theme.border}">
+          <div style="width:34px;height:34px;border-radius:10px;background:${theme.background};display:flex;align-items:center;justify-content:center;font-family:${theme.fontMono};color:${theme.secondary}">${escapeHtml(s.letter || '')}</div>
+          <div style="flex:1">
+            <div style="font-family:${theme.fontBody};font-size:14px;color:${theme.text};font-weight:700">${escapeHtml(s.name || '')}</div>
+            ${s.description ? `<div style="font-family:${theme.fontBody};font-size:13px;color:${theme.muted};line-height:1.65;margin-top:2px">${escapeHtml(s.description)}</div>` : ''}
+            ${s.example ? `<div style="font-family:${theme.fontMono};font-size:12px;color:${theme.text};background:${theme.background};border-radius:10px;padding:10px;margin-top:8px;white-space:pre-wrap">${escapeHtml(s.example)}</div>` : ''}
+          </div>
+        </div>
+      `).join('')}
+      ${b.templatePrompt ? `<div style="margin-top:14px;border:1px solid ${theme.border};border-radius:12px;padding:14px;background:${theme.surface}">
+        <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${theme.muted};margin-bottom:8px">Template prompt</div>
+        <pre style="white-space:pre-wrap;margin:0;font-family:${theme.fontMono};font-size:12px;color:${theme.text};line-height:1.6">${escapeHtml(b.templatePrompt)}</pre>
+      </div>` : ''}
+      ${(b.safetyTips || []).length ? `<div style="margin-top:14px">
+        <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${theme.muted};margin-bottom:8px">Safety tips</div>
+        <ul style="margin:0;padding-left:18px;font-family:${theme.fontBody};font-size:13px;color:${theme.muted};line-height:1.7">
+          ${(b.safetyTips || []).map((t: string) => `<li>${escapeHtml(t)}</li>`).join('')}
+        </ul>
+      </div>` : ''}
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'clinical-prompt-templates': {
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="background:${theme.background};padding:16px 18px;border-bottom:1px solid ${theme.border}">
+      <div style="font-family:${theme.fontDisplay};font-size:22px;color:${theme.text};font-weight:400">${escapeHtml(b.heading || '')}</div>
+      ${b.description ? `<div style="margin-top:6px;font-family:${theme.fontBody};font-size:13px;color:${theme.muted};line-height:1.6">${escapeHtml(b.description)}</div>` : ''}
+    </div>
+    <div style="padding:16px 18px">
+      ${(b.templates || []).map((t: any) => `
+        <div style="border:1px solid ${theme.border};border-radius:14px;padding:14px 14px;margin-bottom:12px">
+          <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-family:${theme.fontBody};font-size:14px;color:${theme.text};font-weight:800">${escapeHtml(t.title || '')}</div>
+            ${t.category ? `<div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${theme.muted}">${escapeHtml(t.category)}</div>` : ''}
+          </div>
+          ${t.useCase ? `<div style="font-family:${theme.fontBody};font-size:13px;color:${theme.muted};margin-bottom:10px;line-height:1.65"><strong>Use case:</strong> ${escapeHtml(t.useCase)}</div>` : ''}
+          ${t.prompt ? `<pre style="white-space:pre-wrap;margin:0;font-family:${theme.fontMono};font-size:12px;color:${theme.text};line-height:1.65;background:${theme.background};border-radius:12px;padding:12px">${escapeHtml(t.prompt)}</pre>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'term-of-month': {
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="background:${theme.primary};padding:14px 18px;color:#fff">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8">AI term of the month</div>
+      <div style="font-family:${theme.fontDisplay};font-size:26px;margin-top:6px;font-weight:400">${escapeHtml(b.term || '')}</div>
+    </div>
+    <div style="padding:16px 18px">
+      ${b.definition ? `<p style="margin:0 0 10px;font-family:${theme.fontBody};font-size:14px;line-height:1.75"><strong>Definition:</strong> ${escapeHtml(b.definition)}</p>` : ''}
+      ${b.relevance ? `<p style="margin:0 0 10px;font-family:${theme.fontBody};font-size:14px;line-height:1.75"><strong>Relevance to medicine:</strong> ${escapeHtml(b.relevance)}</p>` : ''}
+      ${b.neurologyApplication ? `<p style="margin:0;font-family:${theme.fontBody};font-size:14px;line-height:1.75"><strong>Neurology application:</strong> ${escapeHtml(b.neurologyApplication)}</p>` : ''}
+      ${(b.relatedTerms || []).length ? `<div style="margin-top:12px;font-family:${theme.fontMono};font-size:11px;color:${theme.muted}">Related: ${(b.relatedTerms || []).map((t: string) => escapeHtml(t)).join(' · ')}</div>` : ''}
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'ai-case-file': {
+      const img = b.imageDataUrl || b.imageUrl;
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="padding:16px 18px;background:${theme.background};border-bottom:1px solid ${theme.border}">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${theme.muted}">AI case file · ${escapeHtml(b.year || '')}</div>
+      <div style="font-family:${theme.fontDisplay};font-size:24px;color:${theme.text};margin-top:6px;font-weight:400">${escapeHtml(b.title || '')}</div>
+    </div>
+    <div style="display:flex;gap:18px;align-items:flex-start;padding:18px">
+      ${img ? `<img src="${escapeHtml(img)}" alt="" style="width:240px;height:160px;object-fit:cover;border-radius:12px;flex-shrink:0">` : ''}
+      <div style="flex:1">
+        ${b.content ? `<div style="font-family:${theme.fontBody};font-size:14px;color:${theme.muted};line-height:1.75;margin-bottom:10px">${escapeHtml(b.content)}</div>` : ''}
+        ${b.significance ? `<div style="font-family:${theme.fontBody};font-size:14px;color:${theme.text};line-height:1.75;border-left:3px solid ${theme.accent};padding-left:12px">${escapeHtml(b.significance)}</div>` : ''}
+        ${b.sourceUrl ? `<div style="margin-top:12px"><a href="${escapeHtml(b.sourceUrl)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:${theme.accent};font-weight:700;text-decoration:none">${escapeHtml(b.sourceLabel || 'Source')} →</a></div>` : ''}
+      </div>
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'quick-hits': {
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="background:${theme.secondary};padding:14px 18px;color:#fff">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.85">Quick hits</div>
+      <div style="font-family:${theme.fontDisplay};font-size:22px;margin-top:6px;font-weight:400">${escapeHtml(b.heading || '')}</div>
+    </div>
+    <div style="padding:14px 18px">
+      ${(b.hits || []).map((h: any) => `
+        <div style="padding:12px 0;border-bottom:1px solid ${theme.border}">
+          <div style="font-family:${theme.fontBody};font-size:14px;font-weight:800;color:${theme.text};line-height:1.35">
+            ${h.url ? `<a href="${escapeHtml(h.url)}" target="_blank" rel="noopener" style="color:${theme.text};text-decoration:none">${escapeHtml(h.title || '')}</a>` : escapeHtml(h.title || '')}
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
+            ${h.source ? `<span style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:${theme.muted}">${escapeHtml(h.source)}</span>` : ''}
+          </div>
+          ${h.summary ? `<div style="margin-top:8px;font-family:${theme.fontBody};font-size:13px;color:${theme.muted};line-height:1.7">${escapeHtml(h.summary)}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'humor': {
+      const img = b.imageDataUrl || b.imageUrl;
+      return `
+<div style="padding:32px 40px">
+  <div style="background:linear-gradient(135deg,${theme.background},${theme.surface});border:1px solid ${theme.border};border-radius:16px;padding:28px;text-align:center">
+    ${img ? `<img src="${escapeHtml(img)}" alt="" style="max-width:100%;border-radius:14px;margin:0 auto 16px;display:block">` : `<div style="font-size:40px;margin-bottom:16px">${escapeHtml(b.emojiDecor || '😄')}</div>`}
+    <h3 style="font-family:${theme.fontDisplay};font-size:22px;color:${theme.text};margin:0 0 16px;font-weight:400">${escapeHtml(b.heading || '')}</h3>
+    <p style="font-family:${theme.fontBody};font-size:16px;color:${theme.text};font-style:italic;margin:0 0 14px;line-height:1.75">${escapeHtml(b.content || '')}</p>
+    ${b.attribution ? `<p style="font-family:${theme.fontMono};font-size:12px;color:${theme.muted};margin:0">${escapeHtml(b.attribution)}</p>` : ''}
+    ${b.sourceUrl ? `<div style="margin-top:10px"><a href="${escapeHtml(b.sourceUrl)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:${theme.accent};font-weight:700;text-decoration:none">Source →</a></div>` : ''}
+  </div>
+</div>`;
+    }
+
+    case 'ai-safety': {
+      const sevColor = (sev: string) => {
+        switch (sev) {
+          case 'critical': return '#D7263D';
+          case 'high': return '#E07A00';
+          case 'medium': return '#D9A400';
+          default: return theme.muted;
+        }
+      };
+
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="background:${theme.primary};padding:14px 18px;color:#fff;display:flex;gap:10px;align-items:flex-end;justify-content:space-between">
+      <div>
+        <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8">${escapeHtml(b.subheading || 'AI Safety')}</div>
+        <div style="font-family:${theme.fontDisplay};font-size:22px;margin-top:6px;font-weight:400">${escapeHtml(b.heading || '')}</div>
+      </div>
+      ${b.showLastUpdated ? `<div style="font-family:${theme.fontMono};font-size:10px;opacity:0.6">Updated ${escapeHtml(new Date().toLocaleDateString())}</div>` : ''}
+    </div>
+    <div style="padding:14px 18px">
+      ${(b.updates || []).map((u: any) => `
+        <div style="padding:12px 0;border-bottom:1px solid ${theme.border}">
+          <div style="display:flex;gap:10px;align-items:center;justify-content:space-between">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <span style="display:inline-block;padding:3px 8px;border-radius:999px;background:${sevColor(u.severity)}22;color:${sevColor(u.severity)};font-family:${theme.fontMono};font-size:10px;letter-spacing:0.08em;text-transform:uppercase">${escapeHtml(u.severity || '')}</span>
+              <span style="font-family:${theme.fontMono};font-size:10px;color:${theme.muted}">${escapeHtml(u.category || '')}</span>
+              <span style="font-family:${theme.fontMono};font-size:10px;color:${theme.muted}">${escapeHtml(u.date || '')}</span>
+            </div>
+            ${u.url ? `<a href="${escapeHtml(u.url)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:${theme.accent};font-weight:700;text-decoration:none">↗</a>` : ''}
+          </div>
+          <div style="margin-top:8px;font-family:${theme.fontBody};font-size:14px;font-weight:800;color:${theme.text}">
+            ${u.url ? `<a href="${escapeHtml(u.url)}" target="_blank" rel="noopener" style="color:${theme.text};text-decoration:none">${escapeHtml(u.title || '')}</a>` : escapeHtml(u.title || '')}
+          </div>
+          ${u.summary ? `<div style="margin-top:6px;font-family:${theme.fontBody};font-size:13px;color:${theme.muted};line-height:1.7">${escapeHtml(u.summary)}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'northwell-spotlight': {
+      return `
+<div style="padding:24px 40px">
+  <div style="border:1px solid ${theme.border};border-radius:16px;overflow:hidden;background:${theme.surface}">
+    <div style="background:${theme.secondary};padding:14px 18px;color:#fff;display:flex;gap:10px;align-items:flex-end;justify-content:space-between">
+      <div>
+        <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.85">${escapeHtml(b.subheading || '')}</div>
+        <div style="font-family:${theme.fontDisplay};font-size:22px;margin-top:6px;font-weight:400">${escapeHtml(b.heading || 'Northwell Spotlight')}</div>
+      </div>
+      ${b.lastFetched ? `<div style="font-family:${theme.fontMono};font-size:10px;opacity:0.6">Updated ${escapeHtml(new Date(b.lastFetched).toLocaleDateString())}</div>` : ''}
+    </div>
+    <div style="padding:14px 18px">
+      ${(b.items || []).slice(0, b.maxItems || 6).map((it: any) => `
+        <div style="padding:12px 0;border-bottom:1px solid ${theme.border};display:flex;gap:12px;align-items:flex-start">
+          ${it.imageUrl ? `<img src="${escapeHtml(it.imageUrl)}" alt="" style="width:92px;height:68px;object-fit:cover;border-radius:10px;flex-shrink:0">` : ''}
+          <div style="flex:1">
+            <div style="font-family:${theme.fontBody};font-size:14px;font-weight:800;color:${theme.text};line-height:1.35">
+              ${it.url ? `<a href="${escapeHtml(it.url)}" target="_blank" rel="noopener" style="color:${theme.text};text-decoration:none">${escapeHtml(it.title || '')}</a>` : escapeHtml(it.title || '')}
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
+              ${it.pubDate ? `<span style="font-family:${theme.fontMono};font-size:10px;color:${theme.muted}">${escapeHtml(new Date(it.pubDate).toLocaleDateString())}</span>` : ''}
+            </div>
+            ${it.summary ? `<div style="margin-top:8px;font-family:${theme.fontBody};font-size:13px;color:${theme.muted};line-height:1.7">${escapeHtml(it.summary)}</div>` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'rss-sidebar': {
+      const urls = (b.feedUrls || []).filter(Boolean);
+      const data = escapeHtml(JSON.stringify(urls));
+      const max = Math.max(1, b.maxItems || 8);
+
+      // Render current items (if present) but also keep live RSS connectivity via hydration script.
+      const itemsHtml = (b.items || []).slice(0, max).map((it: any, i: number) => `
+        <div style="padding:11px 18px;border-bottom:1px solid ${theme.border};display:flex;gap:10px;align-items:flex-start">
+          <span style="font-family:${theme.fontMono};font-size:12px;color:${theme.accent};flex-shrink:0;min-width:20px;margin-top:1px">${escapeHtml(String(i+1).padStart(2,'0'))}</span>
+          <div style="flex:1">
+            <div style="font-family:${theme.fontBody};font-size:13px;font-weight:700;color:${theme.text};line-height:1.3;margin-bottom:3px">
+              ${it.url ? `<a href="${escapeHtml(it.url)}" target="_blank" rel="noopener" style="color:${theme.text};text-decoration:none">${escapeHtml(it.title || '')}</a>` : escapeHtml(it.title || '')}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              ${it.source ? `<span style="font-family:${theme.fontMono};font-size:9px;color:${theme.muted};text-transform:uppercase;letter-spacing:0.08em">${escapeHtml(it.source)}</span>` : ''}
+              ${it.pubDate ? `<span style="font-family:${theme.fontMono};font-size:9px;color:${theme.muted}">${escapeHtml(new Date(it.pubDate).toLocaleDateString())}</span>` : ''}
+            </div>
+          </div>
+          ${it.url ? `<a href="${escapeHtml(it.url)}" target="_blank" rel="noopener" style="flex-shrink:0;font-family:${theme.fontBody};font-size:11px;color:${theme.accent};font-weight:700;text-decoration:none;padding-top:1px">↗</a>` : ''}
+        </div>
+      `).join('');
+
+      const inlineWrapStyle = b.position === 'sidebar-right'
+        ? 'padding:24px 40px;'
+        : 'padding:24px 40px;';
+
+      return `
+<div class="nap-rss-sidebar" data-rss-sidebar="1" data-feeds='${data}' data-max="${escapeHtml(String(max))}" style="${inlineWrapStyle}">
+  <div style="border:1px solid ${theme.border};border-radius:12px;overflow:hidden;background:${theme.surface}">
+    <div style="background:${theme.primary};padding:12px 18px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:14px">📰</span>
+      <span style="font-family:${theme.fontMono};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.9)">${escapeHtml(b.heading || 'News')}</span>
+      ${b.lastFetched ? `<span style="margin-left:auto;font-family:${theme.fontMono};font-size:9px;color:rgba(255,255,255,0.5)">Updated ${escapeHtml(new Date(b.lastFetched).toLocaleDateString())}</span>` : ''}
+    </div>
+    <div class="nap-scroll" style="max-height:420px">
+      <div class="nap-rss-sidebar-items">
+        ${itemsHtml || `<div style="padding:24px 18px;text-align:center;color:${theme.muted};font-family:${theme.fontBody};font-size:13px">No feed items yet — configure feeds and refresh.</div>`}
+      </div>
+    </div>
+  </div>
+</div>`;
+    }
+
+    case 'spacer': {
+      return `<div style="height:${Number(b.height || 24)}px${b.showLine ? `;border-top:1px ${escapeHtml(b.lineStyle || 'solid')} ${theme.border}` : ''}"></div>`;
+    }
+
+    case 'footer': {
+      const socials = (b.showSocials && (b.socials || []).length)
+        ? `<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:0 0 18px">
+            ${(b.socials || []).map((s: any) => `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:rgba(255,255,255,0.7);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.2)">${escapeHtml(s.platform)}</a>`).join('')}
+          </div>`
+        : '';
+
+      return `
+<div style="background:${theme.primary};padding:44px 40px 36px;text-align:center">
+  ${(b.nextIssueDate || b.nextIssueTeaser) ? `
+    <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:14px 20px;margin-bottom:28px;display:inline-block">
+      <div style="font-family:${theme.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px">Next Issue</div>
+      <div style="font-family:${theme.fontBody};font-size:14px;color:rgba(255,255,255,0.85)">${escapeHtml(b.nextIssueDate || '')}${b.nextIssueTeaser ? ` · ${escapeHtml(b.nextIssueTeaser)}` : ''}</div>
+    </div>` : ''
+  }
+  <div style="font-family:${theme.fontDisplay};font-size:22px;color:#fff;margin-bottom:4px;font-weight:400">${escapeHtml(b.institution || '')}</div>
+  <div style="font-family:${theme.fontBody};font-size:14px;color:rgba(255,255,255,0.65);margin-bottom:4px">${escapeHtml(b.department || '')}</div>
+  ${b.editors ? `<div style="font-family:${theme.fontBody};font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:24px">${escapeHtml(b.editors)}</div>` : ''}
+  <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:24px">
+    ${b.subscribeUrl ? `<a href="${escapeHtml(b.subscribeUrl)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:rgba(255,255,255,0.6);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:2px">Subscribe</a>` : ''}
+    ${b.websiteUrl ? `<a href="${escapeHtml(b.websiteUrl)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:rgba(255,255,255,0.6);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:2px">Website</a>` : ''}
+    ${b.contactEmail ? `<a href="mailto:${escapeHtml(b.contactEmail)}" style="font-family:${theme.fontBody};font-size:12px;color:rgba(255,255,255,0.6);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:2px">Contact</a>` : ''}
+    ${b.unsubscribeUrl ? `<a href="${escapeHtml(b.unsubscribeUrl)}" target="_blank" rel="noopener" style="font-family:${theme.fontBody};font-size:12px;color:rgba(255,255,255,0.6);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:2px">Unsubscribe</a>` : ''}
+  </div>
+  ${socials}
+  <div style="height:1px;background:rgba(255,255,255,0.1);max-width:200px;margin:0 auto 20px"></div>
+  <p style="font-family:${theme.fontBody};font-size:11px;color:rgba(255,255,255,0.4);margin:0 0 8px;max-width:580px;margin-left:auto;margin-right:auto;line-height:1.6">${escapeHtml(b.disclaimer || '')}</p>
+  <p style="font-family:${theme.fontMono};font-size:10px;color:rgba(255,255,255,0.3);margin:0;letter-spacing:0.1em">© ${escapeHtml(b.copyrightYear || '')} ${escapeHtml(b.institution || '')}</p>
+</div>`;
+    }
+
+    default:
+      return `<div style="padding:16px 40px;font-family:${theme.fontMono};font-size:12px;color:${theme.muted}">[Unsupported block: ${escapeHtml((block as any).type)}]</div>`;
+  }
+}
+
+function exportRuntimeScript(): string {
+  // Hydrates RSS for ticker + RSS sidebar using allorigins proxy (CORS-safe).
+  return `
+<script>
+(function(){
+  const PROXY = 'https://api.allorigins.win/raw?url=';
+
+  function parseXml(xml){
+    try{
+      const p = new DOMParser();
+      const doc = p.parseFromString(xml, 'text/xml');
+      if(doc.querySelector('parsererror')) return [];
+      const items = Array.from(doc.querySelectorAll('item'));
+      if(items.length){
+        return items.map(el => ({
+          title: (el.querySelector('title')?.textContent || '').trim(),
+          url: (el.querySelector('link')?.textContent || '').trim(),
+          date: (el.querySelector('pubDate')?.textContent || '').trim()
+        })).filter(x => x.title);
+      }
+      const entries = Array.from(doc.querySelectorAll('entry'));
+      return entries.map(el => ({
+        title: (el.querySelector('title')?.textContent || '').trim(),
+        url: (el.querySelector('link')?.getAttribute('href') || el.querySelector('link')?.textContent || '').trim(),
+        date: (el.querySelector('updated')?.textContent || el.querySelector('published')?.textContent || '').trim()
+      })).filter(x => x.title);
+    }catch(e){ return []; }
+  }
+
+  async function fetchFeed(url){
+    const res = await fetch(PROXY + encodeURIComponent(url), { cache: 'no-store' });
+    if(!res.ok) return [];
+    const xml = await res.text();
+    return parseXml(xml);
+  }
+
+  async function hydrateTicker(){
+    const el = document.querySelector('.nap-ticker');
+    if(!el) return;
+
+    const source = el.getAttribute('data-source');
+    if(source !== 'rss') return;
+
+    let rssUrls = [];
+    try{ rssUrls = JSON.parse(el.getAttribute('data-rss') || '[]') || []; }catch(e){}
+    const max = parseInt(el.getAttribute('data-rss-max') || '20', 10) || 20;
+
+    if(!rssUrls.length) return;
+
+    const all = [];
+    for(const u of rssUrls){
+      try{
+        const items = await fetchFeed(u);
+        all.push(...items);
+      }catch(e){}
+    }
+    const seen = new Set();
+    const deduped = all.filter(x => {
+      const k = x.url || x.title;
+      if(!k || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    }).slice(0, Math.max(1, max));
+
+    const track = el.querySelector('.nap-ticker-track');
+    if(!track) return;
+
+    const textColor = getComputedStyle(el).color || '#fff';
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-accent') || '#009CDE';
+    const fontMono = getComputedStyle(document.documentElement).getPropertyValue('--font-mono') || 'ui-monospace';
+
+    function itemHtml(it){
+      const t = (it.title || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const u = (it.url || '#');
+      return '<a class="nap-ticker-item" href="'+u+'" target="_blank" rel="noopener noreferrer" ' +
+        'style="font-family:'+fontMono+';font-size:12px;color:'+textColor+';padding:0 32px;letter-spacing:0.04em;display:inline-flex;align-items:center;gap:10px;text-decoration:none">' +
+        '<span style="width:5px;height:5px;border-radius:50%;background:'+accent+';display:inline-block;flex-shrink:0"></span>' +
+        t + '<span style="font-size:10px;opacity:0.6">↗</span></a>';
+    }
+
+    const html = deduped.map(itemHtml).join('');
+    track.innerHTML = html + html;
+  }
+
+  async function hydrateRssSidebar(){
+    const el = document.querySelector('[data-rss-sidebar="1"]');
+    if(!el) return;
+
+    let feeds = [];
+    try{ feeds = JSON.parse(el.getAttribute('data-feeds') || '[]') || []; }catch(e){}
+    const max = parseInt(el.getAttribute('data-max') || '8', 10) || 8;
+
+    if(!feeds.length) return;
+
+    const all = [];
+    for(const u of feeds){
+      try{
+        const items = await fetchFeed(u);
+        // annotate with source host
+        const host = (new URL(u)).hostname.replace(/^www\./,'');
+        items.forEach(it => it.source = host);
+        all.push(...items);
+      }catch(e){}
+    }
+    const seen = new Set();
+    const deduped = all.filter(x => {
+      const k = x.url || x.title;
+      if(!k || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    }).slice(0, Math.max(1, max));
+
+    const container = el.querySelector('.nap-rss-sidebar-items');
+    if(!container) return;
+
+    const border = getComputedStyle(document.documentElement).getPropertyValue('--color-border') || '#C8D9EE';
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-accent') || '#009CDE';
+    const text = getComputedStyle(document.documentElement).getPropertyValue('--color-text') || '#1A2B4A';
+    const muted = getComputedStyle(document.documentElement).getPropertyValue('--color-muted') || '#5A789A';
+    const fontBody = getComputedStyle(document.documentElement).getPropertyValue('--font-body') || 'system-ui';
+    const fontMono = getComputedStyle(document.documentElement).getPropertyValue('--font-mono') || 'ui-monospace';
+
+    function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fmtDate(d){
+      try{ return new Date(d).toLocaleDateString(); }catch(e){ return ''; }
+    }
+
+    container.innerHTML = deduped.map((it, i) => {
+      const n = String(i+1).padStart(2,'0');
+      const title = esc(it.title);
+      const url = esc(it.url || '');
+      const src = esc(it.source || '');
+      const dt = it.date ? fmtDate(it.date) : '';
+      return '<div style="padding:11px 18px;border-bottom:1px solid '+border+';display:flex;gap:10px;align-items:flex-start">' +
+        '<span style="font-family:'+fontMono+';font-size:12px;color:'+accent+';flex-shrink:0;min-width:20px;margin-top:1px">'+n+'</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-family:'+fontBody+';font-size:13px;font-weight:700;color:'+text+';line-height:1.3;margin-bottom:3px">' +
+            (url ? '<a href="'+url+'" target="_blank" rel="noopener" style="color:'+text+';text-decoration:none">'+title+'</a>' : title) +
+          '</div>' +
+          '<div style="display:flex;gap:8px;align-items:center">' +
+            (src ? '<span style="font-family:'+fontMono+';font-size:9px;color:'+muted+';text-transform:uppercase;letter-spacing:0.08em">'+src+'</span>' : '') +
+            (dt ? '<span style="font-family:'+fontMono+';font-size:9px;color:'+muted+'">'+dt+'</span>' : '') +
+          '</div>' +
+        '</div>' +
+        (url ? '<a href="'+url+'" target="_blank" rel="noopener" style="flex-shrink:0;font-family:'+fontBody+';font-size:11px;color:'+accent+';font-weight:700;text-decoration:none;padding-top:1px">↗</a>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  // Kick off (non-blocking)
+  hydrateTicker();
+  hydrateRssSidebar();
+})();
+</script>
+`;
+}
+
+export function exportToHtml(newsletter: Newsletter): string {
+  const { theme, blocks, blockOrder } = newsletter;
+
+  const body = blockOrder
+    .map((id) => (blocks[id] ? blockToHtml(blocks[id], theme) : ''))
+    .join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(newsletter.meta.title || 'Neurology AI Pulse')}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+${getExportCss(theme)}
+</style>
+</head>
+<body>
+  <div class="nap-shell">
+    ${body}
+  </div>
+  ${exportRuntimeScript()}
+</body>
+</html>`;
+}
+
+export function downloadHtml(newsletter: Newsletter) {
+  const html = exportToHtml(newsletter);
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `nap-issue-${newsletter.meta.issueNumber || 'draft'}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}

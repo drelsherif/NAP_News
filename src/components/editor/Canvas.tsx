@@ -63,7 +63,7 @@ export function Canvas({ newsletter, editorState, onSelectBlock, onMoveBlock, on
         marginBottom: scale < 1 ? `calc((${scale} - 1) * 100%)` : 0,
       }}>
         {/* Paper */}
-        <div style={{
+        <div id="nap-paper" style={{
           width: canvasWidth,
           background: theme.surface,
           boxShadow: previewMode ? 'none' : '0 0 0 1px rgba(0,0,0,0.05), 0 8px 40px rgba(0,0,0,0.12)',

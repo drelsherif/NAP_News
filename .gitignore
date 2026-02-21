@@ -26,4 +26,4 @@ Thumbs.db
 *.log
 
 # optional: vite cache
-.vite/ 
+.vite/

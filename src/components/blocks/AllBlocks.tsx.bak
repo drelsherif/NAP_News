@@ -56,7 +56,7 @@ export function HeaderBlock({ block, theme, editable, onUpdateBlock }: { block: 
     ? theme.primary
     : `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 60%, ${theme.accent}44 100%)`;
   return (
-    <div className="nap-white-section" style={{ background: bg, padding: '48px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', color: '#fff' }}>
+    <div style={{ background: bg, padding: '48px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
       <svg style={{ position: 'absolute', bottom: 0, left: 0, right: 0, opacity: 0.08 }} viewBox="0 0 800 60" fill="none" preserveAspectRatio="none" height={60}>
         <path d="M0 40 Q200 0 400 30 Q600 60 800 20 L800 60 L0 60Z" fill="white" />
       </svg>
@@ -68,14 +68,14 @@ export function HeaderBlock({ block, theme, editable, onUpdateBlock }: { block: 
       </div>
       <h1 style={{ fontFamily: theme.fontDisplay, fontSize: 46, fontWeight: 400, color: '#fff', margin: '0 0 10px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
         {editable ? (
-          <EditableText value={block.title} placeholder="Newsletter title" onCommit={(v) => onUpdateBlock({ title: v })} style={{ display: 'block', width: '100%' }} />
+          <EditableText value={block.title} placeholder="Newsletter title" onCommit={(v) => onUpdateBlock({ title: v })} style={{ display: 'inline-block', minWidth: 240 }} />
         ) : (
           block.title
         )}
       </h1>
       <p style={{ fontFamily: theme.fontDisplay, fontSize: 20, fontStyle: 'italic', color: 'rgba(255,255,255,0.85)', margin: '0 0 18px', lineHeight: 1.3 }}>
         {editable ? (
-          <EditableText value={block.subtitle} placeholder="Subtitle" onCommit={(v) => onUpdateBlock({ subtitle: v })} style={{ display: 'block', width: '100%' }} />
+          <EditableText value={block.subtitle} placeholder="Subtitle" onCommit={(v) => onUpdateBlock({ subtitle: v })} style={{ display: 'inline-block', minWidth: 240 }} />
         ) : (
           block.subtitle
         )}
@@ -83,7 +83,7 @@ export function HeaderBlock({ block, theme, editable, onUpdateBlock }: { block: 
       <div style={{ height: 1, background: 'rgba(255,255,255,0.2)', maxWidth: 280, margin: '0 auto 18px' }} />
       <p style={{ fontFamily: theme.fontBody, fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: 0, letterSpacing: '0.02em' }}>
         {editable ? (
-          <EditableText value={block.tagline} placeholder="Tagline" onCommit={(v) => onUpdateBlock({ tagline: v })} style={{ display: 'block', width: '100%' }} />
+          <EditableText value={block.tagline} placeholder="Tagline" onCommit={(v) => onUpdateBlock({ tagline: v })} style={{ display: 'inline-block', minWidth: 240 }} />
         ) : (
           block.tagline
         )}
@@ -182,7 +182,7 @@ export function TickerBlock({ block, theme }: { block: TickerBlockType; theme: T
   const textItems = hasRss || hasLinks ? [] : [...(block.items || []), ...(block.items || [])];
 
   return (
-    <div className="nap-ticker" style={{ background: block.backgroundColor || theme.primary, overflow: 'hidden', height: 40, display: 'flex', alignItems: 'center', color: block.textColor || '#fff' }}>
+    <div style={{ background: block.backgroundColor || theme.primary, overflow: 'hidden', height: 40, display: 'flex', alignItems: 'center' }}>
       <style>{`@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
       <div style={{ display: 'flex', gap: 0, whiteSpace: 'nowrap', animation: `ticker ${dur}s linear infinite`, willChange: 'transform' }}>
         {linkItems.length
@@ -210,13 +210,13 @@ export function TickerBlock({ block, theme }: { block: TickerBlockType; theme: T
 export function SectionDividerBlock({ block, theme, editable, onUpdateBlock }: { block: SectionDividerBlockType; theme: T; editable?: boolean; newsletter: any; onUpdateBlock: (c: Partial<SectionDividerBlockType>) => void }) {
   if (block.style === 'bold') {
     return (
-      <div className="nap-white-section" style={{ background: theme.primary, padding: '18px 40px', display: 'flex', alignItems: 'center', gap: 16, color: '#fff' }}>
+      <div style={{ background: theme.primary, padding: '18px 40px', display: 'flex', alignItems: 'center', gap: 16 }}>
         {block.number > 0 && <span style={{ fontFamily: theme.fontMono, fontSize: 32, fontWeight: 300, color: 'rgba(255,255,255,0.25)', lineHeight: 1 }}>{String(block.number).padStart(2, '0')}</span>}
         <div>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>Section</div>
           <div style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: '#fff', lineHeight: 1.15 }}>
             {editable ? (
-              <EditableText value={block.label} placeholder="Section title" onCommit={(v) => onUpdateBlock({ label: v })} style={{ display: 'block', width: '100%' }} />
+              <EditableText value={block.label} placeholder="Section title" onCommit={(v) => onUpdateBlock({ label: v })} style={{ display: 'inline-block', minWidth: 200 }} />
             ) : (
               block.label
             )}
@@ -231,7 +231,7 @@ export function SectionDividerBlock({ block, theme, editable, onUpdateBlock }: {
         <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: theme.muted, whiteSpace: 'nowrap' }}>
           <span>{block.number > 0 ? `0${block.number} —— ` : '—— '}</span>
           {editable ? (
-            <EditableText value={block.label} placeholder="Section title" onCommit={(v) => onUpdateBlock({ label: v })} style={{ display: 'block', width: '100%', color: theme.muted }} />
+            <EditableText value={block.label} placeholder="Section title" onCommit={(v) => onUpdateBlock({ label: v })} style={{ display: 'inline-block', minWidth: 200, color: theme.muted }} />
           ) : (
             <span>{block.label}</span>
           )}
@@ -257,7 +257,7 @@ export function ArticleGridBlock({ block, theme, editable, onUpdateBlock, onUpda
       {block.sectionTitle !== undefined && (
         <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.text, margin: '0 0 20px', fontWeight: 400 }}>
           {editable ? (
-            <EditableText value={block.sectionTitle || ''} placeholder="Section title" onCommit={(v) => onUpdateBlock({ sectionTitle: v })} style={{ display: 'block', width: '100%' }} />
+            <EditableText value={block.sectionTitle || ''} placeholder="Section title" onCommit={(v) => onUpdateBlock({ sectionTitle: v })} style={{ display: 'inline-block', minWidth: 240 }} />
           ) : (
             block.sectionTitle
           )}
@@ -284,11 +284,11 @@ function ArticleCard({ article: art, theme, layout, editable, onUpdate }: { arti
   return (
     <div style={{ border: `1px solid ${theme.border}`, borderRadius: 12, overflow: 'hidden', background: theme.surface, display: 'flex', flexDirection: 'column' }}>
       {art.imageUrl && <div style={{ height: 160, overflow: 'hidden', flexShrink: 0 }}><img src={art.imageUrl} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
-      <div style={{ padding: layout === 'compact' ? '10px 14px' : '16px', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div style={{ padding: layout === 'compact' ? '10px 14px' : '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
           <span style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.muted }}>
             {editable ? (
-              <EditableText value={art.source || ''} placeholder="Source" onCommit={(v) => onUpdate({ source: v })} style={{ display: 'block', width: '100%', color: theme.muted }} />
+              <EditableText value={art.source || ''} placeholder="Source" onCommit={(v) => onUpdate({ source: v })} style={{ display: 'inline-block', minWidth: 120, color: theme.muted }} />
             ) : (
               art.source
             )}
@@ -297,7 +297,7 @@ function ArticleCard({ article: art, theme, layout, editable, onUpdate }: { arti
         </div>
         <h3 style={{ fontFamily: theme.fontDisplay, fontSize: layout === 'compact' ? 16 : 20, color: theme.text, margin: '0 0 10px', lineHeight: 1.25, fontWeight: 400 }}>
           {editable ? (
-            <EditableText value={art.title || ''} placeholder="Article title" multiline={false} onCommit={(v) => onUpdate({ title: v })} style={{ display: 'block', width: '100%' }} />
+            <EditableText value={art.title || ''} placeholder="Article title" multiline={false} onCommit={(v) => onUpdate({ title: v })} style={{ display: 'inline-block', minWidth: 180 }} />
           ) : (
             (art.url ? <a href={art.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.text, textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = theme.accent} onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = theme.text}>{art.title}</a> : art.title)
           )}
@@ -356,7 +356,7 @@ export function SpotlightBlock({ block, theme, editable, onUpdateArticle }: { bl
     <div style={pad(24, 40)}>
       <div style={{ border: `1px solid ${theme.border}`, borderRadius: 14, overflow: 'hidden', background: theme.surface, display: 'flex', flexDirection: hasImage ? (isLeft ? 'row' : 'row-reverse') : 'column' }}>
         {hasImage && <div style={{ width: '40%', flexShrink: 0 }}><img src={art.imageUrl} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /></div>}
-        <div style={{ flex: 1, padding: 28, borderLeft: hasImage && isLeft ? `4px solid ${block.accentColor || theme.accent}` : undefined, minWidth: 0 }}>
+        <div style={{ flex: 1, padding: 28, borderLeft: hasImage && isLeft ? `4px solid ${block.accentColor || theme.accent}` : undefined }}>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.muted, marginBottom: 12 }}>✦ Spotlight · {art.source}</div>
           <SpotlightContent art={art} theme={theme} accentColor={block.accentColor} editable={editable} onUpdate={(c) => onUpdateArticle(art.id, c)} />
         </div>
@@ -369,7 +369,7 @@ function SpotlightContent({ art, theme, accentColor, editable, onUpdate }: { art
   return (<>
     <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 28, color: theme.text, margin: '0 0 12px', fontWeight: 400, lineHeight: 1.2 }}>
       {editable ? (
-        <EditableText value={art.title || ''} placeholder="Spotlight title" onCommit={(v) => onUpdate({ title: v })} style={{ display: 'block', width: '100%' }} />
+        <EditableText value={art.title || ''} placeholder="Spotlight title" onCommit={(v) => onUpdate({ title: v })} style={{ display: 'inline-block', minWidth: 240 }} />
       ) : (
         (art.url ? <a href={art.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.text, textDecoration: 'none' }}>{art.title}</a> : art.title)
       )}
@@ -410,7 +410,7 @@ export function EthicsSplitBlock({ block, theme, editable, onUpdateBlock }: { bl
         <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.accent, marginBottom: 6 }}>⚖ AI Ethics & Governance</div>
         <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.text, margin: '0 0 6px', fontWeight: 400 }}>
           {editable ? (
-            <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} />
+            <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'inline-block', minWidth: 240 }} />
           ) : (
             block.heading
           )}
@@ -426,7 +426,7 @@ export function EthicsSplitBlock({ block, theme, editable, onUpdateBlock }: { bl
           <div style={{ fontFamily: theme.fontMono, fontSize: 11, color: theme.muted, marginTop: 6 }}>
             Source:{' '}
             {editable ? (
-              <EditableText value={block.source || ''} placeholder="Source" onCommit={(v) => onUpdateBlock({ source: v })} style={{ display: 'block', width: '100%', color: theme.muted }} />
+              <EditableText value={block.source || ''} placeholder="Source" onCommit={(v) => onUpdateBlock({ source: v })} style={{ display: 'inline-block', minWidth: 140, color: theme.muted }} />
             ) : (
               (block.url ? <a href={block.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.accent }}>{block.source}</a> : block.source)
             )}
@@ -436,7 +436,7 @@ export function EthicsSplitBlock({ block, theme, editable, onUpdateBlock }: { bl
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ border: `1px solid ${theme.border}`, borderRadius: 12, padding: 20, background: theme.background }}>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C0392B', fontWeight: 700, marginBottom: 10 }}>
-            {editable ? <EditableText value={block.leftTitle || ''} placeholder="Left title" onCommit={(v) => onUpdateBlock({ leftTitle: v })} style={{ display: 'block', width: '100%', color: '#C0392B' }} /> : block.leftTitle}
+            {editable ? <EditableText value={block.leftTitle || ''} placeholder="Left title" onCommit={(v) => onUpdateBlock({ leftTitle: v })} style={{ display: 'inline-block', minWidth: 140, color: '#C0392B' }} /> : block.leftTitle}
           </div>
           <p style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.text, margin: 0, lineHeight: 1.65 }}>
             {editable ? <EditableText value={block.leftContent || ''} placeholder="Left content" multiline onCommit={(v) => onUpdateBlock({ leftContent: v })} style={{ minHeight: 18 }} /> : block.leftContent}
@@ -444,7 +444,7 @@ export function EthicsSplitBlock({ block, theme, editable, onUpdateBlock }: { bl
         </div>
         <div style={{ border: `1px solid ${theme.accent}44`, borderRadius: 12, padding: 20, background: theme.accent + '0A' }}>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.accent, fontWeight: 700, marginBottom: 10 }}>
-            {editable ? <EditableText value={block.rightTitle || ''} placeholder="Right title" onCommit={(v) => onUpdateBlock({ rightTitle: v })} style={{ display: 'block', width: '100%', color: theme.accent }} /> : block.rightTitle}
+            {editable ? <EditableText value={block.rightTitle || ''} placeholder="Right title" onCommit={(v) => onUpdateBlock({ rightTitle: v })} style={{ display: 'inline-block', minWidth: 140, color: theme.accent }} /> : block.rightTitle}
           </div>
           <p style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.text, margin: 0, lineHeight: 1.65 }}>
             {editable ? <EditableText value={block.rightContent || ''} placeholder="Right content" multiline onCommit={(v) => onUpdateBlock({ rightContent: v })} style={{ minHeight: 18 }} /> : block.rightContent}
@@ -539,7 +539,7 @@ export function HtmlEmbedBlock({ block, theme, editable, onUpdateBlock }: { bloc
       <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: theme.muted, marginBottom: 8 }}>
         💻{' '}
         {editable ? (
-          <EditableText value={block.label || ''} placeholder="Embed label" onCommit={(v) => onUpdateBlock({ label: v })} style={{ display: 'block', width: '100%', color: theme.muted }} />
+          <EditableText value={block.label || ''} placeholder="Embed label" onCommit={(v) => onUpdateBlock({ label: v })} style={{ display: 'inline-block', minWidth: 140, color: theme.muted }} />
         ) : (
           block.label
         )}
@@ -559,14 +559,14 @@ export function PromptMasterclassBlock({ block, theme, editable, onUpdateBlock }
     <div style={pad(28, 40)}>
       <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.accent, marginBottom: 8 }}>🤖 Prompt Like a Rockstar</div>
       <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.text, margin: '0 0 6px', fontWeight: 400 }}>
-        {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} /> : block.heading}
+        {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'inline-block', minWidth: 240 }} /> : block.heading}
       </h2>
       <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.muted, marginBottom: 20 }}>
         {editable ? (
           <>
-            <EditableText value={block.step || ''} placeholder="Step" onCommit={(v) => onUpdateBlock({ step: v })} style={{ display: 'block', width: '100%', color: theme.muted }} />
+            <EditableText value={block.step || ''} placeholder="Step" onCommit={(v) => onUpdateBlock({ step: v })} style={{ display: 'inline-block', minWidth: 160, color: theme.muted }} />
             {' · Framework: '}
-            <strong><EditableText value={block.framework || ''} placeholder="Framework" onCommit={(v) => onUpdateBlock({ framework: v })} style={{ display: 'block', width: '100%' }} /></strong>
+            <strong><EditableText value={block.framework || ''} placeholder="Framework" onCommit={(v) => onUpdateBlock({ framework: v })} style={{ display: 'inline-block', minWidth: 180 }} /></strong>
           </>
         ) : (
           <>
@@ -624,15 +624,15 @@ export function SbarPromptBlock({ block, theme, editable, onUpdateBlock }: { blo
     <div style={pad(28, 40)}>
       <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.accent, marginBottom: 8 }}>📋 Clinical AI Prompting</div>
       <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.text, margin: '0 0 20px', fontWeight: 400 }}>
-        {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} /> : block.heading}
+        {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'inline-block', minWidth: 240 }} /> : block.heading}
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
         {(block.steps || []).map((step, i) => (
           <div key={step.letter} style={{ border: `1px solid ${theme.border}`, borderRadius: 10, padding: 14, background: theme.surface }}>
-            <div style={{ fontFamily: theme.fontDisplay, fontSize: 64, fontWeight: 400, color: colors[i] || theme.primary, lineHeight: 1, marginBottom: 6, fontStyle: 'italic' }}>{step.letter}</div>
-            <div style={{ fontFamily: theme.fontMono, fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.muted, marginBottom: 8, paddingBottom: 8, borderBottom: `2px solid ${colors[i] || theme.primary}` }}>
+            <div style={{ fontFamily: theme.fontDisplay, fontSize: 38, color: colors[i] || theme.primary, lineHeight: 1, marginBottom: 8, fontWeight: 400 }}>{step.letter}</div>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.muted, marginBottom: 8 }}>
               {editable ? (
-                <EditableText value={step.name || ''} placeholder="Step name" onCommit={(v) => updateStep(i, { name: v })} style={{ display: 'block', width: '100%', color: theme.muted }} />
+                <EditableText value={step.name || ''} placeholder="Step name" onCommit={(v) => updateStep(i, { name: v })} style={{ display: 'inline-block', minWidth: 90, color: theme.muted }} />
               ) : (
                 step.name
               )}
@@ -720,9 +720,9 @@ export function ClinicalPromptTemplatesBlock({ block, theme }: { block: Clinical
             <div key={tpl.id} style={{ border: `1px solid ${theme.border}`, borderRadius: 10, overflow: 'hidden', background: theme.surface, transition: 'box-shadow 0.15s' }}>
               <div style={{ padding: '12px 14px', borderBottom: isExpanded ? `1px solid ${theme.border}` : 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <span style={{ fontFamily: theme.fontMono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff', padding: '2px 7px', background: catColor, borderRadius: 999 }}>{tpl.category}</span>
+                      <span style={{ fontFamily: theme.fontMono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: catColor, padding: '2px 7px', background: catColor + '18', borderRadius: 999 }}>{tpl.category}</span>
                     </div>
                     <div style={{ fontFamily: theme.fontBody, fontSize: 13, fontWeight: 600, color: theme.text, marginBottom: 3 }}>{tpl.title}</div>
                     <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.muted }}>{tpl.useCase}</div>
@@ -758,7 +758,7 @@ export function TermOfMonthBlock({ block, theme, editable, onUpdateBlock }: { bl
     <div style={pad(28, 40)}>
       <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.accent, marginBottom: 8 }}>📖 AI Term of the Month</div>
       <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 34, color: theme.text, margin: '0 0 20px', fontWeight: 400 }}>
-        {editable ? <EditableText value={block.term || ''} placeholder="Term" onCommit={(v) => onUpdateBlock({ term: v })} style={{ display: 'block', width: '100%' }} /> : block.term}
+        {editable ? <EditableText value={block.term || ''} placeholder="Term" onCommit={(v) => onUpdateBlock({ term: v })} style={{ display: 'inline-block', minWidth: 200 }} /> : block.term}
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         {[{ title: 'Definition', key: 'definition', content: block.definition }, { title: 'Relevance to Medicine', key: 'relevance', content: block.relevance }, { title: 'Neurology Application', key: 'neurologyApplication', content: block.neurologyApplication }].map(({ title, key, content }) => (
@@ -793,7 +793,7 @@ export function AiCaseFileBlock({ block, theme, editable, onUpdateBlock }: { blo
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <div style={{ background: theme.primary, borderRadius: 10, padding: '14px 18px', textAlign: 'center' }}>
             <div style={{ fontFamily: theme.fontDisplay, fontSize: 28, color: '#fff', lineHeight: 1 }}>
-              {editable ? <EditableText value={block.year || ''} placeholder="Year" onCommit={(v) => onUpdateBlock({ year: v })} style={{ display: 'block', width: '100%', color: '#fff' }} /> : block.year}
+              {editable ? <EditableText value={block.year || ''} placeholder="Year" onCommit={(v) => onUpdateBlock({ year: v })} style={{ display: 'inline-block', minWidth: 60, color: '#fff' }} /> : block.year}
             </div>
             <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 4 }}>AI Case File</div>
           </div>
@@ -803,9 +803,9 @@ export function AiCaseFileBlock({ block, theme, editable, onUpdateBlock }: { blo
             </div>
           )}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1 }}>
           <h3 style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: theme.text, margin: '0 0 10px', fontWeight: 400 }}>
-            {editable ? <EditableText value={block.title || ''} placeholder="Title" onCommit={(v) => onUpdateBlock({ title: v })} style={{ display: 'block', width: '100%' }} /> : block.title}
+            {editable ? <EditableText value={block.title || ''} placeholder="Title" onCommit={(v) => onUpdateBlock({ title: v })} style={{ display: 'inline-block', minWidth: 240 }} /> : block.title}
           </h3>
           <p style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.muted, margin: '0 0 12px', lineHeight: 1.65 }}>
             {editable ? <EditableText value={block.content || ''} placeholder="Content" multiline onCommit={(v) => onUpdateBlock({ content: v })} style={{ minHeight: 18, color: theme.muted }} /> : block.content}
@@ -836,22 +836,22 @@ export function QuickHitsBlock({ block, theme, editable, onUpdateBlock }: { bloc
     <div style={pad(24, 40)}>
       <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.text, margin: '0 0 16px', fontWeight: 400 }}>
         ⚡{' '}
-        {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} /> : block.heading}
+        {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'inline-block', minWidth: 220 }} /> : block.heading}
       </h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {(block.hits || []).map((hit, i) => (
           <div key={hit.id} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 14px', border: `1px solid ${theme.border}`, borderRadius: 10, background: theme.surface }}>
             <span style={{ fontFamily: theme.fontMono, fontSize: 18, color: theme.accent, lineHeight: 1, flexShrink: 0, minWidth: 28 }}>{String(i + 1).padStart(2, '0')}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ flex: 1 }}>
               <div style={{ fontFamily: theme.fontBody, fontSize: 14, fontWeight: 600, color: theme.text, marginBottom: 4, lineHeight: 1.3 }}>
                 {editable ? (
-                  <EditableText value={hit.title || ''} placeholder="Title" onCommit={(v) => updateHit(hit.id, { title: v })} style={{ display: 'block', width: '100%' }} />
+                  <EditableText value={hit.title || ''} placeholder="Title" onCommit={(v) => updateHit(hit.id, { title: v })} style={{ display: 'inline-block', minWidth: 220 }} />
                 ) : (
                   (hit.url ? <a href={hit.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.text, textDecoration: 'none' }}>{hit.title}</a> : hit.title)
                 )}
               </div>
               <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.muted, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                {editable ? <EditableText value={hit.source || ''} placeholder="Source" onCommit={(v) => updateHit(hit.id, { source: v })} style={{ display: 'block', width: '100%', color: theme.muted }} /> : hit.source}
+                {editable ? <EditableText value={hit.source || ''} placeholder="Source" onCommit={(v) => updateHit(hit.id, { source: v })} style={{ display: 'inline-block', minWidth: 120, color: theme.muted }} /> : hit.source}
               </div>
               <p style={{ fontFamily: theme.fontBody, fontSize: 13, color: theme.muted, margin: 0, lineHeight: 1.5 }}>
                 {editable ? <EditableText value={hit.summary || ''} placeholder="Summary" multiline onCommit={(v) => updateHit(hit.id, { summary: v })} style={{ minHeight: 18, color: theme.muted }} /> : hit.summary}
@@ -868,73 +868,20 @@ export function QuickHitsBlock({ block, theme, editable, onUpdateBlock }: { bloc
 // ─── Humor (with optional image) ─────────────────────────────────────────────
 export function HumorBlock({ block, theme, editable, onUpdateBlock }: { block: HumorBlockType; theme: T; editable?: boolean; newsletter: any; onUpdateBlock: (c: Partial<HumorBlockType>) => void }) {
   const imgSrc = block.imageDataUrl || block.imageUrl;
-  const imgFit = block.imageFit || 'contain';
-  const imgHeight = block.imageHeight; // undefined = auto (full image shown)
-
   return (
     <div style={pad(28, 40)}>
       <div style={{ background: `linear-gradient(135deg, ${theme.background}, ${theme.surface})`, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden' }}>
-        {imgSrc && (
-          <div style={{ position: 'relative' }}>
-            <img
-              src={imgSrc}
-              alt="Humor block"
-              style={{
-                width: '100%',
-                display: 'block',
-                height: imgHeight ? `${imgHeight}px` : 'auto',
-                objectFit: imgHeight ? imgFit : undefined,
-              }}
-            />
-            {editable && (
-              <div style={{
-                position: 'absolute', bottom: 8, right: 8,
-                display: 'flex', gap: 6, alignItems: 'center',
-                background: 'rgba(0,0,0,0.55)', borderRadius: 8, padding: '5px 10px',
-              }}>
-                <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: '#fff', whiteSpace: 'nowrap' }}>
-                  {imgHeight ? `${imgHeight}px` : 'Auto'}
-                </span>
-                <input
-                  type="range" min={80} max={600} step={20}
-                  value={imgHeight || 300}
-                  onChange={e => onUpdateBlock({ imageHeight: Number(e.target.value) })}
-                  style={{ width: 80, accentColor: theme.accent, cursor: 'pointer' }}
-                  title="Drag to set image height"
-                />
-                <select
-                  value={imgFit}
-                  onChange={e => onUpdateBlock({ imageFit: e.target.value as any })}
-                  style={{ fontFamily: theme.fontMono, fontSize: 10, background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 4px', cursor: 'pointer' }}
-                  title="Image fit mode"
-                >
-                  <option value="contain">Fit (show all)</option>
-                  <option value="cover">Fill (crop edges)</option>
-                  <option value="fill">Stretch</option>
-                </select>
-                {imgHeight && (
-                  <button
-                    onClick={() => onUpdateBlock({ imageHeight: undefined as any })}
-                    style={{ fontFamily: theme.fontMono, fontSize: 10, background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}
-                    title="Reset to auto height (show full image)"
-                  >
-                    Auto ↩
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {imgSrc && <div style={{ height: 200, overflow: 'hidden' }}><img src={imgSrc} alt="Humor block" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
         <div style={{ padding: '32px 36px', textAlign: 'center' }}>
           {!imgSrc && <div style={{ fontSize: 48, marginBottom: 16 }}>{block.emojiDecor || '😄'}</div>}
           <h3 style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: theme.text, margin: '0 0 16px', fontWeight: 400 }}>
-            {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} /> : block.heading}
+            {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'inline-block', minWidth: 200 }} /> : block.heading}
           </h3>
           <p style={{ fontFamily: theme.fontBody, fontSize: 16, color: theme.text, fontStyle: 'italic', margin: '0 0 16px', lineHeight: 1.7, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
             “{editable ? <EditableText value={block.content || ''} placeholder="Humor content" multiline onCommit={(v) => onUpdateBlock({ content: v })} style={{ minHeight: 18 }} /> : block.content}”
           </p>
           <p style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.muted, margin: '0 0 8px' }}>
-            {editable ? <EditableText value={block.attribution || ''} placeholder="Attribution" onCommit={(v) => onUpdateBlock({ attribution: v })} style={{ display: 'block', width: '100%', color: theme.muted }} /> : block.attribution}
+            {editable ? <EditableText value={block.attribution || ''} placeholder="Attribution" onCommit={(v) => onUpdateBlock({ attribution: v })} style={{ display: 'inline-block', minWidth: 160, color: theme.muted }} /> : block.attribution}
           </p>
           {block.sourceUrl && <a href={block.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.accent }}>Source ↗</a>}
         </div>
@@ -970,7 +917,7 @@ export function AiSafetyBlock({ block, theme, editable, onUpdateBlock }: { block
             <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C0392B' }}>AI Safety Monitor</div>
           </div>
           <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.text, margin: '0 0 4px', fontWeight: 400 }}>
-            {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} /> : block.heading}
+            {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'inline-block', minWidth: 240 }} /> : block.heading}
           </h2>
           <p style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.muted, margin: 0 }}>
             {editable ? <EditableText value={block.subheading || ''} placeholder="Subheading" multiline onCommit={(v) => onUpdateBlock({ subheading: v })} style={{ minHeight: 18, color: theme.muted }} /> : block.subheading}
@@ -992,18 +939,18 @@ export function AiSafetyBlock({ block, theme, editable, onUpdateBlock }: { block
                   <span style={{ fontSize: 14 }}>{sev.icon}</span>
                   <span style={{ fontFamily: theme.fontMono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: sev.color, fontWeight: 700 }}>{sev.label}</span>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: theme.fontMono, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: sev.color, padding: '2px 7px', background: sev.color + '18', borderRadius: 999 }}>
-                      {editable ? <EditableText value={update.category || ''} placeholder="Category" onCommit={(v) => updateUpdate(update.id, { category: ((['FDA','Policy','Incident','Guideline','Alert','Research'] as const).includes(v as any) ? (v as any) : undefined) })} style={{ display: 'block', width: '100%', color: sev.color }} /> : update.category}
+                      {editable ? <EditableText value={update.category || ''} placeholder="Category" onCommit={(v) => updateUpdate(update.id, { category: ((['FDA','Policy','Incident','Guideline','Alert','Research'] as const).includes(v as any) ? (v as any) : undefined) })} style={{ display: 'inline-block', minWidth: 90, color: sev.color }} /> : update.category}
                     </span>
                     <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.muted }}>
-                      {editable ? <EditableText value={update.date || ''} placeholder="Date" onCommit={(v) => updateUpdate(update.id, { date: v })} style={{ display: 'block', width: '100%', color: theme.muted }} /> : update.date}
+                      {editable ? <EditableText value={update.date || ''} placeholder="Date" onCommit={(v) => updateUpdate(update.id, { date: v })} style={{ display: 'inline-block', minWidth: 90, color: theme.muted }} /> : update.date}
                     </span>
                   </div>
                   <div style={{ fontFamily: theme.fontBody, fontSize: 14, fontWeight: 600, color: theme.text, marginBottom: 4 }}>
                     {editable ? (
-                      <EditableText value={update.title || ''} placeholder="Title" onCommit={(v) => updateUpdate(update.id, { title: v })} style={{ display: 'block', width: '100%' }} />
+                      <EditableText value={update.title || ''} placeholder="Title" onCommit={(v) => updateUpdate(update.id, { title: v })} style={{ display: 'inline-block', minWidth: 240 }} />
                     ) : (
                       (update.url ? <a href={update.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.text, textDecoration: 'none' }}>{update.title}</a> : update.title)
                     )}
@@ -1040,7 +987,7 @@ export function NorthwellSpotlightBlock({ block, theme }: { block: NorthwellSpot
             {item.imageUrl && <div style={{ height: 120, overflow: 'hidden' }}><img src={item.imageUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
             <div style={{ padding: 14, flex: 1, display: 'flex', flexDirection: 'column' }}>
               {item.category && <span style={{ fontFamily: theme.fontMono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: theme.accent, marginBottom: 6, display: 'block' }}>{item.category}</span>}
-              <div style={{ fontFamily: theme.fontBody, fontSize: 13, fontWeight: 600, color: theme.text, marginBottom: 6, lineHeight: 1.35, flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: theme.fontBody, fontSize: 13, fontWeight: 600, color: theme.text, marginBottom: 6, lineHeight: 1.35, flex: 1 }}>
                 {item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.text, textDecoration: 'none' }}>{item.title}</a> : item.title}
               </div>
               {item.summary && <p style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.muted, margin: '0 0 8px', lineHeight: 1.5 }}>{item.summary}</p>}
@@ -1077,7 +1024,7 @@ export function RssSidebarBlock({ block, theme }: { block: RssSidebarBlockType; 
                 <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.accent, flexShrink: 0, minWidth: 20, marginTop: 1 }}>
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: theme.fontBody, fontSize: 13, fontWeight: 600, color: theme.text, lineHeight: 1.3, marginBottom: 3 }}>
                     {item.url ? (
                       <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.text, textDecoration: 'none' }}
@@ -1105,35 +1052,24 @@ export function RssSidebarBlock({ block, theme }: { block: RssSidebarBlockType; 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 export function FooterBlock({ block, theme }: { block: FooterBlockType; theme: T; newsletter: any; onUpdateBlock: any }) {
   return (
-    <div className="nap-white-section" style={{ background: theme.primary, padding: '44px 40px 36px', textAlign: 'center', color: '#fff' }}>
+    <div style={{ background: theme.primary, padding: '44px 40px 36px', textAlign: 'center' }}>
       {(block.nextIssueDate || block.nextIssueTeaser) && (
-        <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '14px 20px', marginBottom: 28, display: 'inline-block' }}>
-          <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>Next Issue</div>
-          <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: '#fff' }}>{block.nextIssueDate}{block.nextIssueTeaser ? ` · ${block.nextIssueTeaser}` : ''}</div>
+        <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: '14px 20px', marginBottom: 28, display: 'inline-block' }}>
+          <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>Next Issue</div>
+          <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>{block.nextIssueDate}{block.nextIssueTeaser ? ` · ${block.nextIssueTeaser}` : ''}</div>
         </div>
       )}
       <div style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: '#fff', marginBottom: 4, fontWeight: 400 }}>{block.institution}</div>
-      <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: 'rgba(255,255,255,0.85)', marginBottom: 4 }}>{block.department}</div>
-      {block.editors && <div style={{ fontFamily: theme.fontBody, fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 24 }}>{block.editors}</div>}
+      <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: 'rgba(255,255,255,0.65)', marginBottom: 4 }}>{block.department}</div>
+      {block.editors && <div style={{ fontFamily: theme.fontBody, fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>{block.editors}</div>}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
         {[block.subscribeUrl && { label: 'Subscribe', url: block.subscribeUrl }, block.websiteUrl && { label: 'Website', url: block.websiteUrl }, block.contactEmail && { label: 'Contact', url: `mailto:${block.contactEmail}` }, block.unsubscribeUrl && { label: 'Unsubscribe', url: block.unsubscribeUrl }].filter(Boolean).map((link: any) => (
-          <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: theme.fontBody, fontSize: 12, color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.4)', paddingBottom: 2 }}>{link.label}</a>
+          <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: theme.fontBody, fontSize: 12, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 2 }}>{link.label}</a>
         ))}
       </div>
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.2)', maxWidth: 200, margin: '0 auto 20px' }} />
-      {block.showSocials && (block.socials || []).length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap', marginBottom: 20 }}>
-          {(block.socials || []).map((s: any) => (
-            <a key={s.platform} href={s.url} target="_blank" rel="noopener noreferrer"
-              style={{ fontFamily: theme.fontBody, fontSize: 12, color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.4)' }}>
-              {s.platform}
-            </a>
-          ))}
-        </div>
-      )}
       <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', maxWidth: 200, margin: '0 auto 20px' }} />
-      <p style={{ fontFamily: theme.fontBody, fontSize: 11, color: 'rgba(255,255,255,0.75)', margin: '0 0 8px', maxWidth: 580, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>{block.disclaimer}</p>
-      <p style={{ fontFamily: theme.fontMono, fontSize: 10, color: 'rgba(255,255,255,0.65)', margin: 0, letterSpacing: '0.1em' }}>© {block.copyrightYear} {block.institution}</p>
+      <p style={{ fontFamily: theme.fontBody, fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '0 0 8px', maxWidth: 580, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>{block.disclaimer}</p>
+      <p style={{ fontFamily: theme.fontMono, fontSize: 10, color: 'rgba(255,255,255,0.3)', margin: 0, letterSpacing: '0.1em' }}>© {block.copyrightYear} {block.institution}</p>
     </div>
   );
 }

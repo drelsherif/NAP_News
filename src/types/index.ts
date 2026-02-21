@@ -205,6 +205,8 @@ export interface HumorBlock {
   imageUrl: string;
   imageDataUrl: string;
   sourceUrl: string;
+  imageHeight?: number;
+  imageFit?: 'cover' | 'contain' | 'fill';
 }
 
 export interface SpacerBlock {

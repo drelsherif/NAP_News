@@ -227,6 +227,8 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
     imageUrl: '',
     imageDataUrl: '',
     sourceUrl: '',
+    imageHeight: undefined,
+    imageFit: 'contain' as const,
   }),
 
   spacer: () => ({

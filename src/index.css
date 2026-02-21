@@ -40,7 +40,12 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
 
 /* ─── Typography defaults ───────────────────────────────────────────────────── */
+/* Links default to accent color in the builder */
 a { color: var(--color-accent); }
+/* White sections (header, footer, bold dividers) links inherit white */
+.nap-white-section a { color: inherit; }
+/* Ticker links stay white regardless */
+.nap-ticker a { color: inherit !important; }
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */
 @keyframes fadeInUp {

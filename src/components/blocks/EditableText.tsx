@@ -50,7 +50,10 @@ export function EditableText({ value, placeholder, multiline = false, style, cla
       style={{
         outline: 'none',
         cursor: 'text',
-        whiteSpace: multiline ? 'pre-wrap' : 'nowrap',
+        whiteSpace: multiline ? 'pre-wrap' : 'normal',
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
+        minWidth: 0,
         ...(style || {}),
       }}
       contentEditable

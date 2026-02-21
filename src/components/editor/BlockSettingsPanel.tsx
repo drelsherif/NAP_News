@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import type { Block, Newsletter, Article, QuickHit } from '../../types';
 import { Field, inputStyle, textareaStyle } from './Sidebar';
@@ -111,7 +111,7 @@ function TickerSettings({ block, upd }: any) {
     <Field label="Background"><input type="color" value={block.backgroundColor} onChange={e => upd({ backgroundColor: e.target.value })} /></Field>
     <Field label="Text Color"><input type="color" value={block.textColor} onChange={e => upd({ textColor: e.target.value })} /></Field>
     <Field label={`Headlines (${items.length})`} hint="One per line">
-      <textarea style={{ ...textareaStyle, minHeight: 140 }} value={items.join('\n')} onChange={e => upd({ items: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })} />
+      <textarea style={{ ...textareaStyle, minHeight: 140 }} value={items.join('\n')} onChange={e => upd({ items: e.target.value.split('\n').map((s: string) => s.trim()).filter(Boolean) })} />
     </Field>
   </>);
 }
@@ -474,6 +474,34 @@ function HumorSettingsExtended({ block, upd }: any) {
       }} />
       {(block.imageDataUrl || block.imageUrl) && <div style={{ marginTop: 8 }}><img src={block.imageDataUrl || block.imageUrl} alt="Preview" style={{ maxHeight: 100, maxWidth: '100%', borderRadius: 8 }} /></div>}
     </Field>
+    {(block.imageDataUrl || block.imageUrl) && (<>
+      <Field label="Image Height">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="range" min={80} max={600} step={20}
+            value={block.imageHeight || 300}
+            onChange={e => upd({ imageHeight: Number(e.target.value) })}
+            style={{ flex: 1, accentColor: 'var(--color-accent)' }}
+          />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted)', minWidth: 44 }}>
+            {block.imageHeight ? `${block.imageHeight}px` : 'Auto'}
+          </span>
+        </div>
+        <button
+          onClick={() => upd({ imageHeight: undefined })}
+          style={{ ...inputStyle, marginTop: 4, cursor: 'pointer', textAlign: 'center', fontSize: 11, color: 'var(--color-muted)' }}
+        >
+          Reset to Auto (show full image)
+        </button>
+      </Field>
+      <Field label="Image Fit">
+        <select style={inputStyle} value={block.imageFit || 'contain'} onChange={e => upd({ imageFit: e.target.value })}>
+          <option value="contain">Fit — show entire image</option>
+          <option value="cover">Fill — crop to fit height</option>
+          <option value="fill">Stretch — fill exactly</option>
+        </select>
+      </Field>
+    </>)}
   </>);
 }
 
@@ -528,7 +556,7 @@ function TickerSettingsExtended({ block, upd }: any) {
               value={rssText}
               onChange={e => setRssText(e.target.value)}
               onBlur={() => {
-                const urls = rssText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                const urls = rssText.split(/\r?\n/).map((s: string) => s.trim()).filter(Boolean);
                 upd({ rssUrls: urls });
               }}
               placeholder="https://…/rss.xml\nhttps://…/feed"
@@ -646,7 +674,7 @@ function AiSafetySettingsPanel({ block, upd }: any) {
           </Field>
           <Field label="Severity">
             <select style={inputStyle} value={u.severity} onChange={e => { const arr = [...updates]; arr[i] = {...u, severity: e.target.value}; upd({ updates: arr }); }}>
-              {severities.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+              {severities.map((s: string) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
             </select>
           </Field>
           <Field label="Title"><input style={inputStyle} value={u.title} onChange={e => { const arr = [...updates]; arr[i] = {...u, title: e.target.value}; upd({ updates: arr }); }} /></Field>
