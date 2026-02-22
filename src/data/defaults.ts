@@ -144,6 +144,25 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
     ],
   }),
 
+  // Standalone prompt template (separate from SBAR-P)
+  'prompt-template': () => ({
+    id: uuidv4(), type: 'prompt-template',
+    heading: 'Template Prompt',
+    prompt: `Act as a [SPECIALTY] consultant reviewing this case.\n\nPatient: [AGE] [SEX] presenting with [CHIEF COMPLAINT] for [DURATION].\nKey findings: [VITAL SIGNS, EXAM FINDINGS, KEY LABS/IMAGING]\nPMH: [RELEVANT COMORBIDITIES]\nCurrent medications: [MED LIST]\n\nTask: Generate a prioritized differential diagnosis (top 5 conditions).\nFor each diagnosis, provide:\n  1. Likelihood assessment (High / Moderate / Low)\n  2. Supporting clinical features from this case\n  3. Single most informative next investigation\n\nRequirements:\n- Base reasoning on current evidence-based guidelines\n- Explicitly flag areas of uncertainty\n- Do not fabricate laboratory values, imaging findings, or medication doses\n- If clinical information is insufficient, state what additional data is needed`,
+  }),
+
+  // Standalone safety reminders (configurable 1–n)
+  'safety-reminders': () => ({
+    id: uuidv4(), type: 'safety-reminders',
+    heading: 'Safety Reminders',
+    items: [
+      'Always verify AI-generated clinical reasoning against primary sources before acting.',
+      'Never submit patient-identifiable information (PHI) to consumer AI tools — use only approved institutional platforms.',
+      'AI supports clinical judgment; it does not replace it. Final decisions remain with the treating clinician.',
+      'Document AI tool use in the medical record where institutional policy requires it.',
+    ],
+  }),
+
   'clinical-prompt-templates': () => ({
     id: uuidv4(), type: 'clinical-prompt-templates',
     heading: 'Clinical Prompt Templates',
@@ -239,13 +258,13 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
     id: uuidv4(), type: 'footer',
     institution: 'Northwell Health', department: 'Department of Neurology',
     editors: 'Yasir El-Sherif MD, PhD & Jai Shahani MD',
-    unsubscribeUrl: '#unsubscribe', subscribeUrl: '#subscribe',
-    websiteUrl: 'https://www.northwell.edu/neurology',
-    contactEmail: 'neurologyai@northwell.edu',
+    unsubscribeUrl: '', subscribeUrl: '',
+    websiteUrl: '',
+    contactEmail: 'yelsherif@northwell.edu',
     copyrightYear: String(new Date().getFullYear()),
     disclaimer: 'This newsletter is for educational purposes only and does not constitute medical advice. Content represents the views of the authors and not Northwell Health as an institution.',
-    socials: [{ platform: 'Twitter/X', url: '#', icon: 'twitter' }, { platform: 'LinkedIn', url: '#', icon: 'linkedin' }],
-    showSocials: true, nextIssueDate: '', nextIssueTeaser: '',
+    socials: [],
+    showSocials: false, nextIssueDate: '', nextIssueTeaser: '',
   }),
 
   'ai-safety': () => ({
@@ -308,12 +327,15 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
     heading: 'In the Feed This Week',
     feedUrls: [
       'https://pubmed.ncbi.nlm.nih.gov/rss/search/1/?term=neurology+artificial+intelligence&sort=date',
+      'https://jamanetwork.com/rss/site_16/onlineFirst_72.xml',
+      'https://pn.bmj.com/rss/current.xml',
     ],
     items: [],
-    maxItems: 8,
+    maxItems: 15,
     lastFetched: '',
     position: 'inline',
     refreshOnView: false,
+    enableScroll: false,
   }),
 };
 
@@ -329,6 +351,8 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   'html-embed':                '💻  HTML Embed',
   'prompt-masterclass':        '🤖  Prompt Masterclass',
   'sbar-prompt':               '📋  SBAR-P Framework',
+  'prompt-template':           '🧩  Template Prompt',
+  'safety-reminders':          '⚠️  Safety Reminders',
   'clinical-prompt-templates': '📎  Clinical Prompt Templates',
   'term-of-month':             '📖  AI Term of the Month',
   'ai-case-file':              '🕰️  AI Case File / History',
@@ -347,7 +371,7 @@ export function makeDefaultNewsletter(): Newsletter {
   const headerId = uuidv4(); const tickerId = uuidv4(); const div1Id = uuidv4();
   const articleId = uuidv4(); const spotlightId = uuidv4(); const div2Id = uuidv4();
   const ethicsId = uuidv4(); const safetyId = uuidv4(); const div3Id = uuidv4();
-  const sbarId = uuidv4(); const templatesId = uuidv4(); const termId = uuidv4();
+  const sbarId = uuidv4(); const promptTplId = uuidv4(); const safetyRemId = uuidv4(); const templatesId = uuidv4(); const termId = uuidv4();
   const div4Id = uuidv4(); const northwellId = uuidv4(); const rssSidebarId = uuidv4();
   const humorId = uuidv4(); const spacerId = uuidv4(); const footerId = uuidv4();
 
@@ -357,7 +381,7 @@ export function makeDefaultNewsletter(): Newsletter {
       issueNumber: '001', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     },
     theme: THEMES[0],
-    blockOrder: [headerId, tickerId, div1Id, articleId, spotlightId, div2Id, ethicsId, safetyId, div3Id, sbarId, templatesId, termId, div4Id, northwellId, rssSidebarId, humorId, spacerId, footerId],
+    blockOrder: [headerId, tickerId, div1Id, articleId, spotlightId, div2Id, ethicsId, safetyId, div3Id, sbarId, promptTplId, safetyRemId, templatesId, termId, div4Id, northwellId, rssSidebarId, humorId, spacerId, footerId],
     blocks: {
       [headerId]: { ...BLOCK_DEFAULTS['header'](), id: headerId } as any,
       [tickerId]: { ...BLOCK_DEFAULTS['ticker'](), id: tickerId } as any,
@@ -369,6 +393,8 @@ export function makeDefaultNewsletter(): Newsletter {
       [safetyId]: { ...BLOCK_DEFAULTS['ai-safety'](), id: safetyId } as any,
       [div3Id]: { ...BLOCK_DEFAULTS['section-divider'](), id: div3Id, label: 'CLINICAL AI SKILLS', number: 3 } as any,
       [sbarId]: { ...BLOCK_DEFAULTS['sbar-prompt'](), id: sbarId } as any,
+      [promptTplId]: { ...BLOCK_DEFAULTS['prompt-template'](), id: promptTplId } as any,
+      [safetyRemId]: { ...BLOCK_DEFAULTS['safety-reminders'](), id: safetyRemId } as any,
       [templatesId]: { ...BLOCK_DEFAULTS['clinical-prompt-templates'](), id: templatesId } as any,
       [termId]: { ...BLOCK_DEFAULTS['term-of-month'](), id: termId } as any,
       [div4Id]: { ...BLOCK_DEFAULTS['section-divider'](), id: div4Id, label: 'NORTHWELL & COMMUNITY', number: 4 } as any,

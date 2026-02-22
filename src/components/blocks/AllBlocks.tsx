@@ -12,6 +12,8 @@ import type {
   HtmlEmbedBlock as HtmlEmbedBlockType,
   PromptMasterclassBlock as PromptMasterclassBlockType,
   SbarPromptBlock as SbarPromptBlockType,
+  PromptTemplateBlock as PromptTemplateBlockType,
+  SafetyRemindersBlock as SafetyRemindersBlockType,
   ClinicalPromptTemplatesBlock as ClinicalPromptTemplatesBlockType,
   TermOfMonthBlock as TermOfMonthBlockType,
   AiCaseFileBlock as AiCaseFileBlockType,
@@ -29,6 +31,7 @@ import type {
 
 import { EditableText } from './EditableText';
 import { EditableHtml } from './EditableHtml';
+import { RichTextEditor } from '../editor/RichTextEditor';
 
 type T = Newsletter['theme'];
 const pad = (h = 32, v = 40) => ({ padding: `${h}px ${v}px` } as React.CSSProperties);
@@ -96,7 +99,7 @@ export function HeaderBlock({ block, theme, editable, onUpdateBlock }: { block: 
 export function TickerBlock({ block, theme }: { block: TickerBlockType; theme: T; newsletter: any; onUpdateBlock: any }) {
   const speeds = { slow: 60, medium: 36, fast: 20 };
   const dur = speeds[block.speed] || 36;
-  const PROXY = 'https://api.allorigins.win/raw?url=';
+  const PROXY = 'https://api.allorigins.win/get?url=';
 
   const [rssLinks, setRssLinks] = useState<{ text: string; url: string }[]>([]);
 
@@ -147,7 +150,8 @@ export function TickerBlock({ block, theme }: { block: TickerBlockType; theme: T
         try {
           const res = await fetch(PROXY + encodeURIComponent(url), { cache: 'no-store' });
           if (!res.ok) continue;
-          const xml = await res.text();
+          const data = await res.json();
+          const xml = (data && typeof data.contents === 'string') ? data.contents : '';
           all.push(...parseXml(xml));
         } catch {
           // ignore per-feed errors in ticker (avoid noisy UI)
@@ -499,30 +503,14 @@ export function TextBlock({ block, theme, editable, onUpdateBlock }: { block: Te
       .trim();
   };
 
-  const escapeHtml = (s: string) =>
-    (s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-  const toHtmlParagraphs = (plain: string) => {
-    const lines = (plain || '').split(/\n+/).map(l => l.trim()).filter(Boolean);
-    if (!lines.length) return '';
-    return lines.map(l => `<p>${escapeHtml(l)}</p>`).join('');
-  };
-
-  const plain = stripHtml(block.html);
-
   return (
     <div style={{ padding: '16px 40px' }}>
       <div style={{ fontFamily: theme.fontBody, color: theme.text, lineHeight: 1.7, maxWidth: (maxWidthMap as any)[block.maxWidth] || '100%', margin: '0 auto', textAlign: block.alignment as any, fontSize: 15 }}>
         {editable ? (
-          <EditableText
-            value={plain}
+          <RichTextEditor
+            html={block.html || ''}
             placeholder="Type here…"
-            multiline
-            onCommit={(v) => onUpdateBlock({ html: toHtmlParagraphs(v) })}
-            style={{ minHeight: 24 }}
+            onChangeHtml={(v) => onUpdateBlock({ html: v })}
           />
         ) : (
           <div dangerouslySetInnerHTML={{ __html: block.html }} />
@@ -600,7 +588,6 @@ export function PromptMasterclassBlock({ block, theme, editable, onUpdateBlock }
 
 // ─── SBAR-P Guide (fixed + fully editable) ────────────────────────────────────
 export function SbarPromptBlock({ block, theme, editable, onUpdateBlock }: { block: SbarPromptBlockType; theme: T; editable?: boolean; newsletter: any; onUpdateBlock: (c: Partial<SbarPromptBlockType>) => void }) {
-  const [copied, setCopied] = useState(false);
   const colors = [theme.primary, theme.secondary, theme.accent, '#7B2D8B', '#00A651'];
 
   const updateStep = (idx: number, changes: Partial<SbarStep>) => {
@@ -608,21 +595,9 @@ export function SbarPromptBlock({ block, theme, editable, onUpdateBlock }: { blo
     onUpdateBlock({ steps: next });
   };
 
-  const updateTip = (idx: number, text: string) => {
-    const next = (block.safetyTips || []).map((t, i) => (i === idx ? text : t));
-    onUpdateBlock({ safetyTips: next });
-  };
-
-  const handleCopyTemplate = () => {
-    navigator.clipboard.writeText(block.templatePrompt).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
   return (
     <div style={pad(28, 40)}>
-      <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.accent, marginBottom: 8 }}>📋 Clinical AI Prompting</div>
+      <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.accent, marginBottom: 8 }}>📋 SBAR-P Framework</div>
       <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.text, margin: '0 0 20px', fontWeight: 400 }}>
         {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} /> : block.heading}
       </h2>
@@ -648,39 +623,100 @@ export function SbarPromptBlock({ block, theme, editable, onUpdateBlock }: { blo
           </div>
         ))}
       </div>
-      {block.templatePrompt && (
-        <div style={{ background: theme.background, border: `1px solid ${theme.border}`, borderRadius: 10, padding: 16, marginBottom: 14, position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: theme.muted }}>Template Prompt</div>
-            <button onClick={handleCopyTemplate}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: copied ? theme.accent : 'none', border: `1px solid ${copied ? theme.accent : theme.border}`, borderRadius: 6, fontFamily: theme.fontBody, fontSize: 11, color: copied ? '#fff' : theme.muted, cursor: 'pointer', transition: 'all 0.2s' }}>
-              {copied ? '✓ Copied!' : '📋 Click to copy'}
-            </button>
+    </div>
+  );
+}
+
+// ─── Template Prompt (collapsible + copy) ────────────────────────────────────
+export function PromptTemplateBlock({ block, theme, editable, onUpdateBlock }: { block: PromptTemplateBlockType; theme: T; editable?: boolean; newsletter: any; onUpdateBlock: (c: Partial<PromptTemplateBlockType>) => void }) {
+  const [copied, setCopied] = useState(false);
+  const doCopy = () => {
+    navigator.clipboard.writeText(block.prompt || '').then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    });
+  };
+
+  return (
+    <div style={pad(28, 40)}>
+      <details style={{ border: `1px solid ${theme.border}`, borderRadius: 12, overflow: 'hidden', background: theme.surface }}>
+        <summary
+          style={{
+            listStyle: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '12px 14px',
+            userSelect: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.accent }}>🧩 Template Prompt</div>
+            <div style={{ fontFamily: theme.fontDisplay, fontSize: 18, color: theme.text, fontWeight: 500 }}>
+              {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} /> : block.heading}
+            </div>
           </div>
-          {editable ? (
-            <EditableText value={block.templatePrompt || ''} placeholder="Template prompt" multiline onCommit={(v) => onUpdateBlock({ templatePrompt: v })} style={{ minHeight: 60, fontFamily: theme.fontMono }} />
-          ) : (
-            <pre style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.text, margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{block.templatePrompt}</pre>
-          )}
+
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); doCopy(); }}
+            style={{
+              padding: '7px 12px',
+              background: copied ? theme.accent : theme.primary,
+              border: 'none',
+              borderRadius: 8,
+              fontFamily: theme.fontBody,
+              fontSize: 12,
+              color: '#fff',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {copied ? '✓ Copied' : '📋 Copy'}
+          </button>
+        </summary>
+
+        <div style={{ padding: '12px 14px', background: theme.background, borderTop: `1px solid ${theme.border}` }}>
+          <pre style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.text, margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+            {editable ? (
+              <EditableText
+                value={block.prompt || ''}
+                placeholder="Template prompt"
+                multiline
+                onCommit={(v) => onUpdateBlock({ prompt: v })}
+                style={{ minHeight: 140, fontFamily: theme.fontMono, fontSize: 12 }}
+              />
+            ) : (
+              block.prompt
+            )}
+          </pre>
         </div>
-      )}
-      {(block.safetyTips || []).length > 0 && (
-        <div style={{ background: '#FEF9EC', border: '1px solid #F6D860', borderRadius: 10, padding: '14px 16px' }}>
-          <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C06500', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-            ⚠️ Safety Reminders
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {block.safetyTips.map((tip, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ color: '#C06500', flexShrink: 0, marginTop: 2 }}>▸</span>
-                <span style={{ fontFamily: theme.fontBody, fontSize: 13, color: '#7A5800', lineHeight: 1.5 }}>
-                  {editable ? <EditableText value={tip} placeholder="Safety tip" multiline onCommit={(v) => updateTip(i, v)} style={{ minHeight: 18, color: '#7A5800' }} /> : tip}
-                </span>
-              </div>
-            ))}
-          </div>
+      </details>
+    </div>
+  );
+}
+
+// ─── Safety Reminders (configurable list) ───────────────────────────────────
+export function SafetyRemindersBlock({ block, theme }: { block: SafetyRemindersBlockType; theme: T; newsletter: any; onUpdateBlock: any }) {
+  const items = (block.items || []).filter(Boolean);
+  return (
+    <div style={pad(18, 40)}>
+      <div style={{ border: '1px solid #F4D38B', background: '#FFF7E6', borderRadius: 12, padding: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8A5A00' }}>⚠️ {block.heading || 'Safety Reminders'}</div>
         </div>
-      )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: items.length <= 2 ? '1fr' : '1fr 1fr', gap: 10 }}>
+          {items.map((txt, idx) => (
+            <div key={idx} style={{ background: 'rgba(255,255,255,0.65)', border: `1px solid ${theme.border}`, borderRadius: 10, padding: 12, display: 'flex', gap: 10 }}>
+              <div style={{ fontFamily: theme.fontMono, fontSize: 11, color: '#8A5A00', marginTop: 1 }}>▶</div>
+              <div style={{ fontFamily: theme.fontBody, fontSize: 13, color: theme.text, lineHeight: 1.6 }}>{txt}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -792,10 +828,10 @@ export function AiCaseFileBlock({ block, theme, editable, onUpdateBlock }: { blo
       <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <div style={{ background: theme.primary, borderRadius: 10, padding: '14px 18px', textAlign: 'center' }}>
-            <div style={{ fontFamily: theme.fontDisplay, fontSize: 28, color: '#fff', lineHeight: 1 }}>
+            <div style={{ fontFamily: theme.fontDisplay, fontSize: 28, color: '#fff', lineHeight: 1, textShadow: '0 1px 0 rgba(0,0,0,0.18)' }}>
               {editable ? <EditableText value={block.year || ''} placeholder="Year" onCommit={(v) => onUpdateBlock({ year: v })} style={{ display: 'block', width: '100%', color: '#fff' }} /> : block.year}
             </div>
-            <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 4 }}>AI Case File</div>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 4 }}>AI Case File</div>
           </div>
           {imgSrc && (
             <div style={{ width: 100, height: 80, borderRadius: 8, overflow: 'hidden', border: `1px solid ${theme.border}` }}>
@@ -874,6 +910,18 @@ export function HumorBlock({ block, theme, editable, onUpdateBlock }: { block: H
   return (
     <div style={pad(28, 40)}>
       <div style={{ background: `linear-gradient(135deg, ${theme.background}, ${theme.surface})`, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden' }}>
+        {/* Title */}
+        <div style={{ padding: '16px 18px', borderBottom: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>😄</span>
+          <div style={{ fontFamily: theme.fontDisplay, fontSize: 20, color: theme.text, fontWeight: 400 }}>
+            {editable ? (
+              <EditableText value={block.heading || 'Humor'} placeholder="Humor" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} />
+            ) : (
+              block.heading || 'Humor'
+            )}
+          </div>
+        </div>
+
         {imgSrc && (
           <div style={{ position: 'relative' }}>
             <img
@@ -925,18 +973,33 @@ export function HumorBlock({ block, theme, editable, onUpdateBlock }: { block: H
             )}
           </div>
         )}
-        <div style={{ padding: '32px 36px', textAlign: 'center' }}>
-          {!imgSrc && <div style={{ fontSize: 48, marginBottom: 16 }}>{block.emojiDecor || '😄'}</div>}
-          <h3 style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: theme.text, margin: '0 0 16px', fontWeight: 400 }}>
-            {editable ? <EditableText value={block.heading || ''} placeholder="Heading" onCommit={(v) => onUpdateBlock({ heading: v })} style={{ display: 'block', width: '100%' }} /> : block.heading}
-          </h3>
-          <p style={{ fontFamily: theme.fontBody, fontSize: 16, color: theme.text, fontStyle: 'italic', margin: '0 0 16px', lineHeight: 1.7, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
-            “{editable ? <EditableText value={block.content || ''} placeholder="Humor content" multiline onCommit={(v) => onUpdateBlock({ content: v })} style={{ minHeight: 18 }} /> : block.content}”
-          </p>
-          <p style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.muted, margin: '0 0 8px' }}>
-            {editable ? <EditableText value={block.attribution || ''} placeholder="Attribution" onCommit={(v) => onUpdateBlock({ attribution: v })} style={{ display: 'block', width: '100%', color: theme.muted }} /> : block.attribution}
-          </p>
-          {block.sourceUrl && <a href={block.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.accent }}>Source ↗</a>}
+        {/* Caption / punchline */}
+        <div style={{ padding: '18px 22px', textAlign: 'center' }}>
+          {!imgSrc && <div style={{ fontSize: 44, marginBottom: 10 }}>{block.emojiDecor || '😄'}</div>}
+          <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.muted, marginBottom: 10 }}>
+            {editable ? (
+              <EditableText
+                value={block.attribution || ''}
+                placeholder="Short caption (optional)"
+                onCommit={(v) => onUpdateBlock({ attribution: v })}
+                style={{ display: 'block', width: '100%', color: theme.muted }}
+              />
+            ) : (
+              block.attribution
+            )}
+          </div>
+          <div style={{ fontFamily: theme.fontBody, fontSize: 16, color: theme.text, fontStyle: 'italic', lineHeight: 1.65, maxWidth: 760, margin: '0 auto' }}>
+            {editable ? (
+              <EditableText value={block.content || ''} placeholder="Punchline" multiline onCommit={(v) => onUpdateBlock({ content: v })} style={{ minHeight: 18 }} />
+            ) : (
+              block.content
+            )}
+          </div>
+          {block.sourceUrl && (
+            <div style={{ marginTop: 10 }}>
+              <a href={block.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.accent, textDecoration: 'none' }}>Source ↗</a>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1066,7 +1129,7 @@ export function RssSidebarBlock({ block, theme }: { block: RssSidebarBlockType; 
           {block.lastFetched && <span style={{ marginLeft: 'auto', fontFamily: theme.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>Updated {new Date(block.lastFetched).toLocaleDateString()}</span>}
         </div>
         {/* Items */}
-        <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+        <div className="nap-rss-scroll" style={{ maxHeight: block.enableScroll ? 420 : 'none', overflowY: block.enableScroll ? 'auto' as any : 'visible' as any }}>
           {(block.items || []).length === 0 ? (
             <div style={{ padding: '24px 18px', textAlign: 'center', color: theme.muted, fontFamily: theme.fontBody, fontSize: 13 }}>
               No feed items yet — configure feeds in Block Settings and refresh.
@@ -1104,6 +1167,8 @@ export function RssSidebarBlock({ block, theme }: { block: RssSidebarBlockType; 
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 export function FooterBlock({ block, theme }: { block: FooterBlockType; theme: T; newsletter: any; onUpdateBlock: any }) {
+  const contactHref = `mailto:yelsherif@northwell.edu?subject=${encodeURIComponent('Neurology AI Pulse Newsletter Suggestions/Comments')}`;
+
   return (
     <div className="nap-white-section" style={{ background: theme.primary, padding: '44px 40px 36px', textAlign: 'center', color: '#fff' }}>
       {(block.nextIssueDate || block.nextIssueTeaser) && (
@@ -1112,26 +1177,37 @@ export function FooterBlock({ block, theme }: { block: FooterBlockType; theme: T
           <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: '#fff' }}>{block.nextIssueDate}{block.nextIssueTeaser ? ` · ${block.nextIssueTeaser}` : ''}</div>
         </div>
       )}
+
       <div style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: '#fff', marginBottom: 4, fontWeight: 400 }}>{block.institution}</div>
       <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: 'rgba(255,255,255,0.85)', marginBottom: 4 }}>{block.department}</div>
-      {block.editors && <div style={{ fontFamily: theme.fontBody, fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 24 }}>{block.editors}</div>}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
-        {[block.subscribeUrl && { label: 'Subscribe', url: block.subscribeUrl }, block.websiteUrl && { label: 'Website', url: block.websiteUrl }, block.contactEmail && { label: 'Contact', url: `mailto:${block.contactEmail}` }, block.unsubscribeUrl && { label: 'Unsubscribe', url: block.unsubscribeUrl }].filter(Boolean).map((link: any) => (
-          <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: theme.fontBody, fontSize: 12, color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.4)', paddingBottom: 2 }}>{link.label}</a>
-        ))}
+      {block.editors && <div style={{ fontFamily: theme.fontBody, fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 22 }}>{block.editors}</div>}
+
+      {/* Contact Us only (per newsletter spec) */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 22 }}>
+        <a
+          href={contactHref}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            fontFamily: theme.fontBody,
+            fontSize: 13,
+            fontWeight: 700,
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '10px 16px',
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.35)',
+            background: 'rgba(255,255,255,0.10)',
+          }}
+        >
+          Contact Us
+          <span style={{ opacity: 0.8 }}>✉️</span>
+        </a>
       </div>
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.2)', maxWidth: 200, margin: '0 auto 20px' }} />
-      {block.showSocials && (block.socials || []).length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap', marginBottom: 20 }}>
-          {(block.socials || []).map((s: any) => (
-            <a key={s.platform} href={s.url} target="_blank" rel="noopener noreferrer"
-              style={{ fontFamily: theme.fontBody, fontSize: 12, color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.4)' }}>
-              {s.platform}
-            </a>
-          ))}
-        </div>
-      )}
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', maxWidth: 200, margin: '0 auto 20px' }} />
+
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.18)', maxWidth: 240, margin: '0 auto 18px' }} />
+
       <p style={{ fontFamily: theme.fontBody, fontSize: 11, color: 'rgba(255,255,255,0.75)', margin: '0 0 8px', maxWidth: 580, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>{block.disclaimer}</p>
       <p style={{ fontFamily: theme.fontMono, fontSize: 10, color: 'rgba(255,255,255,0.65)', margin: 0, letterSpacing: '0.1em' }}>© {block.copyrightYear} {block.institution}</p>
     </div>

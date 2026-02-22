@@ -10,7 +10,20 @@ function esc(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function getExportCss(theme: Newsletter['theme']): string {
+
+function normalizeTerms(terms: any): string[] {
+  if (!terms) return [];
+  if (Array.isArray(terms)) return terms.filter(Boolean).map(String);
+  if (typeof terms === 'string') {
+    // Support comma-separated or newline-separated lists; fallback to splitting on '  ' is avoided.
+    const parts = terms.split(/\s*,\s*|\n+/g).map(s => s.trim()).filter(Boolean);
+    return parts.length ? parts : [terms.trim()];
+  }
+  return [String(terms)];
+}
+
+function getExportCss(theme: Newsletter['theme'], baseFontPx?: number): string {
+  const base = Number.isFinite(baseFontPx as any) ? `html{font-size:${baseFontPx}px}` : '';
   return `
 :root {
   --c-primary: ${theme.primary};
@@ -26,28 +39,37 @@ function getExportCss(theme: Newsletter['theme']): string {
   --f-mono: ${theme.fontMono};
 }
 *,*::before,*::after { box-sizing: border-box; }
+${base}
 html, body { margin: 0; height: auto !important; overflow: auto !important; }
 body {
   font-family: var(--f-body);
   color: var(--c-text);
   background: var(--c-bg);
+  padding: 22px 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-/* Ensure all inline link colors always win - reset browser/email defaults */
-a { color: inherit; text-decoration: none; }
-/* Links that explicitly want accent color use their inline style - add class for explicit accent links */
-a[style*="color"] { /* inline style wins by specificity */ }
+/* Match builder: links default to accent; white sections inherit; ticker stays white */
+a { color: var(--c-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
 /* Ticker links always white */
 .nap-ticker a { color: inherit !important; text-decoration: none !important; }
 .nap-ticker span { color: inherit; }
 /* White section links */
 .nap-white-section a { color: inherit; }
 img { max-width: 100%; display: block; }
-/* Export fidelity: match typical in-app preview zoom (slightly smaller than 100%). */
+/* Export fidelity: DO NOT scale. Keep 1:1 typography and layout. */
 .nap-export-wrap { width: 100%; display: flex; justify-content: center; }
-.nap-shell { max-width: 900px; width: 100%; margin: 0 auto; background: var(--c-surface); }
-.nap-export-scale { transform: scale(0.90); transform-origin: top center; width: 100%; }
+.nap-shell {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.10);
+}
 [contenteditable] { outline: none !important; }
 [data-editor-ui], [data-dnd-dragging] { display: none !important; }
 
@@ -68,6 +90,21 @@ img { max-width: 100%; display: block; }
 .nap-rss-scroll { max-height: none !important; overflow: visible !important; }
 /* Safety: enforce SBAR letter styling even if something external tries to override. */
 .nap-sbar-letter { font-size:56px !important; font-weight:400 !important; line-height:1 !important; margin-bottom:6px !important; font-style:italic !important; text-transform:uppercase !important; }
+
+/* Export-only: ensure "Related" chips render as clear pills even if imported CSS has aggressive !important rules. */
+.ai-related-label { font-weight: 700 !important; }
+.ai-related-pill {
+  display: inline-block !important;
+  background: #F3F6FF !important;
+  border: 1px solid var(--c-border) !important;
+  color: var(--c-text) !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  font-family: var(--f-mono) !important;
+  font-size: 11px !important;
+  line-height: 16px !important;
+  margin: 0 6px 0 0 !important;
+}
 `;
 }
 
@@ -111,12 +148,33 @@ function renderTicker(b: any, t: Newsletter['theme']): string {
 
   const dataRss = esc(JSON.stringify((b.rssUrls || []).filter(Boolean)));
 
+  // Export RSS selector (snapshot-first; optional live refresh)
+  const cfgUi = (b.sourceMode === 'rss') ? `
+  <details class="nap-rss-config" data-rss-kind="ticker" style="position:relative;z-index:2;margin-left:auto;margin-right:14px">
+    <summary style="list-style:none;cursor:pointer;font-family:${t.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.85);padding:6px 10px;border:1px solid rgba(255,255,255,0.25);border-radius:999px;user-select:none">RSS ▾</summary>
+    <div style="margin-top:10px;background:rgba(0,0,0,0.35);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px;min-width:280px">
+      <div style="font-family:${t.fontBody};font-size:12px;color:#fff;margin-bottom:10px;line-height:1.4">Snapshot is shown by default. Enable <b>Live</b> to refresh from selected feeds.</div>
+      <label style="display:flex;align-items:center;gap:8px;font-family:${t.fontBody};font-size:12px;color:#fff;margin-bottom:10px">
+        <input type="checkbox" class="nap-rss-live" style="transform:translateY(1px)" /> Live RSS
+      </label>
+      <div class="nap-rss-preset-list" style="display:grid;gap:6px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="nap-rss-add" placeholder="Add RSS URL" style="flex:1;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-family:${t.fontBody};font-size:12px" />
+        <button class="nap-rss-add-btn" type="button" style="padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-family:${t.fontBody};font-size:12px;cursor:pointer">Add</button>
+      </div>
+      <div class="nap-rss-status" style="margin-top:10px;font-family:${t.fontBody};font-size:12px;color:rgba(255,255,255,0.85)"></div>
+    </div>
+  </details>` : '';
+
   return `
 <div class="nap-ticker"
   data-source="${esc(b.sourceMode || 'manual')}"
   data-rss='${dataRss}'
   data-rss-max="${esc(String(b.rssMaxItems || 20))}"
+  data-live="0"
+  data-key="${esc(b.id || 'ticker')}"
   style="background:${bg};overflow:hidden;height:40px;display:flex;align-items:center;color:${textColor}">
+  ${cfgUi}
   <div class="nap-ticker-track" style="animation:nap_ticker ${dur}s linear infinite">
     ${seedHtml}${seedHtml}
   </div>
@@ -330,32 +388,51 @@ function renderSbarPrompt(b: any, t: Newsletter['theme']): string {
 </div>`;
   }).join('');
 
-  const safetyHtml = (b.safetyTips || []).length > 0 ? `
-<div style="background:#FEF9EC;border:1px solid #F6D860;border-radius:10px;padding:14px 16px">
-  <div style="font-family:${t.fontMono};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#C06500;margin-bottom:10px">⚠️ Safety Reminders</div>
-  <div style="display:flex;flex-direction:column;gap:6px">
-    ${(b.safetyTips || []).map((tip: string) => `
-    <div style="display:flex;gap:10px;align-items:flex-start">
-      <span style="color:#C06500;flex-shrink:0;margin-top:2px">▸</span>
-      <span style="font-family:${t.fontBody};font-size:13px;color:#7A5800;line-height:1.5">${esc(tip)}</span>
-    </div>`).join('')}
-  </div>
-</div>` : '';
-
   return `
 <div style="padding:28px 40px">
   <div style="font-family:${t.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${t.accent};margin-bottom:8px">📋 Clinical AI Prompting</div>
   <h2 style="font-family:${t.fontDisplay};font-size:26px;color:${t.text};margin:0 0 20px;font-weight:400">${esc(b.heading || '')}</h2>
   <div class="nap-5col" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">${stepsHtml}</div>
-  ${b.templatePrompt ? `
-  <div style="background:${t.background};border:1px solid ${t.border};border-radius:10px;padding:16px;margin-bottom:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-family:${t.fontMono};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:${t.muted}">Template Prompt</div>
-      <button class="nap-copy-btn" data-copy="${esc(b.templatePrompt)}" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:none;border:1px solid ${t.border};border-radius:6px;font-family:${t.fontBody};font-size:11px;color:${t.muted}">📋 Click to copy</button>
+</div>`;
+}
+
+function renderPromptTemplate(b: any, t: Newsletter['theme']): string {
+  const prompt = String(b.prompt || '');
+  const heading = String(b.heading || 'Template Prompt');
+  // Collapsible so it doesn't dominate the layout.
+  return `
+<div style="padding:18px 40px">
+  <details style="border:1px solid ${t.border};border-radius:12px;overflow:hidden;background:${t.surface}">
+    <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;user-select:none">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="font-family:${t.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${t.accent}">🧩 Template Prompt</div>
+        <div style="font-family:${t.fontDisplay};font-size:18px;color:${t.text};font-weight:500">${esc(heading)}</div>
+      </div>
+      <button class="nap-copy-btn" data-copy="${esc(prompt)}" style="padding:7px 12px;background:${t.primary};border:none;border-radius:8px;font-family:${t.fontBody};font-size:12px;color:#fff;cursor:pointer;white-space:nowrap">📋 Copy</button>
+    </summary>
+    <div style="padding:12px 14px;background:${t.background};border-top:1px solid ${t.border}">
+      <pre style="font-family:${t.fontMono};font-size:12px;color:${t.text};margin:0;white-space:pre-wrap;line-height:1.6">${esc(prompt)}</pre>
     </div>
-    <pre style="font-family:${t.fontMono};font-size:12px;color:${t.text};margin:0;white-space:pre-wrap;line-height:1.6">${esc(b.templatePrompt)}</pre>
-  </div>` : ''}
-  ${safetyHtml}
+  </details>
+</div>`;
+}
+
+function renderSafetyReminders(b: any, t: Newsletter['theme']): string {
+  const items = (b.items || []).filter(Boolean);
+  if (!items.length) return '';
+  const gridCols = items.length <= 2 ? '1fr' : '1fr 1fr';
+  return `
+<div style="padding:10px 40px 18px">
+  <div style="background:#FFF7E6;border:1px solid #F4D38B;border-radius:12px;padding:14px">
+    <div style="font-family:${t.fontMono};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#8A5A00;margin-bottom:10px">⚠️ ${esc(b.heading || 'Safety Reminders')}</div>
+    <div style="display:grid;grid-template-columns:${gridCols};gap:10px">
+      ${items.map((txt: string) => `
+        <div style="background:rgba(255,255,255,0.65);border:1px solid ${t.border};border-radius:10px;padding:12px;display:flex;gap:10px">
+          <div style="font-family:${t.fontMono};font-size:11px;color:#8A5A00;margin-top:1px">▶</div>
+          <div style="font-family:${t.fontBody};font-size:13px;color:${t.text};line-height:1.6">${esc(txt)}</div>
+        </div>`).join('')}
+    </div>
+  </div>
 </div>`;
 }
 
@@ -418,9 +495,9 @@ function renderTermOfMonth(b: any, t: Newsletter['theme']): string {
     </div>`).join('')}
   </div>
   ${(b.relatedTerms || []).length ? `
-  <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-    <span style="font-family:${t.fontMono};font-size:10px;color:${t.muted};text-transform:uppercase;letter-spacing:0.1em">Related:</span>
-    ${b.relatedTerms.map((term: string) => `<span style="font-family:${t.fontBody};font-size:12px;padding:3px 10px;background:${t.background};border:1px solid ${t.border};border-radius:999px;color:${t.muted}">${esc(term)}</span>`).join('')}
+  <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+    <strong class="ai-related-label" style="font-family:${t.fontBody};font-size:13px;color:${t.text};font-weight:700">Related:</strong>
+    ${normalizeTerms(b.relatedTerms).map((term: string) => `<span class="ai-related-pill" style="display:inline-block !important;font-family:${t.fontMono} !important;font-size:11px !important;padding:4px 10px !important;background:#F3F6FF !important;border:1px solid ${t.border} !important;border-radius:999px !important;color:${t.text} !important;line-height:16px !important">${esc(term)}</span>`).join('')}
   </div>` : ''}
 </div>`;
 }
@@ -431,9 +508,9 @@ function renderAiCaseFile(b: any, t: Newsletter['theme']): string {
 <div style="padding:28px 40px">
   <div style="display:flex;gap:24px;align-items:flex-start">
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0">
-      <div style="background:${t.primary};border-radius:10px;padding:14px 18px;text-align:center">
-        <div style="font-family:${t.fontDisplay};font-size:28px;color:#fff;line-height:1">${esc(b.year || '')}</div>
-        <div style="font-family:${t.fontMono};font-size:9px;color:rgba(255,255,255,0.6);letter-spacing:0.12em;text-transform:uppercase;margin-top:4px">AI Case File</div>
+      <div style="background:${t.primary};border-radius:10px;padding:14px 18px;text-align:center;color:#fff !important">
+        <div style="font-family:${t.fontDisplay};font-size:28px;color:#fff !important;line-height:1;text-shadow:0 1px 0 rgba(0,0,0,0.18)">${esc(b.year || '')}</div>
+        <div style="font-family:${t.fontMono};font-size:10px;color:rgba(255,255,255,0.92) !important;letter-spacing:0.12em;text-transform:uppercase;margin-top:4px;text-shadow:0 1px 0 rgba(0,0,0,0.12)">AI Case File</div>
       </div>
       ${imgSrc ? `<div style="width:100px;height:80px;border-radius:8px;overflow:hidden;border:1px solid ${t.border}"><img src="${esc(imgSrc)}" alt="${esc(b.title || '')}" style="width:100%;height:100%;object-fit:cover"></div>` : ''}
     </div>
@@ -480,13 +557,16 @@ function renderHumor(b: any, t: Newsletter['theme']): string {
   return `
 <div style="padding:28px 40px">
   <div style="background:linear-gradient(135deg,${t.background},${t.surface});border:1px solid ${t.border};border-radius:16px;overflow:hidden">
+    <div style="padding:16px 18px;border-bottom:1px solid ${t.border};display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">😄</span>
+      <div style="font-family:${t.fontDisplay};font-size:20px;color:${t.text};font-weight:400">${esc(b.heading || 'Humor')}</div>
+    </div>
     ${imgSrc ? `<img src="${esc(imgSrc)}" alt="" style="${imgStyle}">` : ''}
-    <div style="padding:32px 36px;text-align:center">
-      ${!imgSrc ? `<div style="font-size:48px;margin-bottom:16px">${esc(b.emojiDecor || '😄')}</div>` : ''}
-      <h3 style="font-family:${t.fontDisplay};font-size:22px;color:${t.text};margin:0 0 16px;font-weight:400">${esc(b.heading || '')}</h3>
-      <p style="font-family:${t.fontBody};font-size:16px;color:${t.text};font-style:italic;margin:0 0 16px;line-height:1.7;max-width:600px;margin-left:auto;margin-right:auto">"${esc(b.content || '')}"</p>
-      <p style="font-family:${t.fontMono};font-size:12px;color:${t.muted};margin:0 0 8px">${esc(b.attribution || '')}</p>
-      ${b.sourceUrl ? `<a href="${esc(b.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="font-family:${t.fontBody};font-size:11px;color:${t.accent}">Source ↗</a>` : ''}
+    <div style="padding:18px 22px;text-align:center">
+      ${!imgSrc ? `<div style="font-size:44px;margin-bottom:10px">${esc(b.emojiDecor || '😄')}</div>` : ''}
+      ${b.attribution ? `<div style="font-family:${t.fontBody};font-size:14px;color:${t.muted};margin-bottom:10px">${esc(b.attribution)}</div>` : ''}
+      <div style="font-family:${t.fontBody};font-size:16px;color:${t.text};font-style:italic;line-height:1.65;max-width:760px;margin:0 auto">${esc(b.content || '')}</div>
+      ${b.sourceUrl ? `<div style="margin-top:10px"><a href="${esc(b.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="font-family:${t.fontBody};font-size:12px;color:${t.accent};text-decoration:none">Source ↗</a></div>` : ''}
     </div>
   </div>
 </div>`;
@@ -595,20 +675,49 @@ function renderRssSidebar(b: any, t: Newsletter['theme']): string {
   ${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer" style="flex-shrink:0;font-family:${t.fontBody};font-size:11px;color:${t.accent};font-weight:600;text-decoration:none;padding-top:1px">↗</a>` : ''}
 </div>`).join('');
 
+  // Export RSS selector UI (snapshot-first; optional live refresh)
+  const cfgUi = `
+    <details class="nap-rss-config" data-rss-kind="sidebar" style="padding:10px 18px;border-bottom:1px solid ${t.border};background:${t.background}">
+      <summary style="list-style:none;cursor:pointer;font-family:${t.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${t.muted};user-select:none">RSS sources ▾</summary>
+      <div style="margin-top:10px;display:grid;gap:10px">
+        <div style="font-family:${t.fontBody};font-size:12px;color:${t.text};line-height:1.45">Snapshot is shown by default. Enable <b>Live</b> to refresh from selected feeds.</div>
+        <label style="display:flex;align-items:center;gap:8px;font-family:${t.fontBody};font-size:12px;color:${t.text}">
+          <input type="checkbox" class="nap-rss-live" style="transform:translateY(1px)" /> Live RSS
+        </label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:${t.fontBody};font-size:12px;color:${t.text}">Items per feed</div>
+          <select class="nap-rss-max" style="margin-left:auto;padding:6px 10px;border-radius:10px;border:1px solid ${t.border};background:${t.surface};color:${t.text};font-family:${t.fontBody};font-size:12px">
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+        <div class="nap-rss-preset-list" style="display:grid;gap:6px"></div>
+        <div style="display:flex;gap:8px">
+          <input class="nap-rss-add" placeholder="Add RSS URL" style="flex:1;padding:8px 10px;border-radius:10px;border:1px solid ${t.border};background:${t.surface};color:${t.text};font-family:${t.fontBody};font-size:12px" />
+          <button class="nap-rss-add-btn" type="button" style="padding:8px 10px;border-radius:10px;border:1px solid ${t.border};background:${t.background};color:${t.text};font-family:${t.fontBody};font-size:12px;cursor:pointer">Add</button>
+        </div>
+        <div class="nap-rss-status" style="font-family:${t.fontBody};font-size:12px;color:${t.muted}"></div>
+      </div>
+    </details>`;
+
   return `
 <div style="padding:24px 40px">
-  <div class="nap-rss-sidebar" data-feeds='${dataFeeds}' data-max="${safeMax}" style="border:1px solid ${t.border};border-radius:12px;overflow:hidden;background:${t.surface}">
+  <div class="nap-rss-sidebar" data-feeds='${dataFeeds}' data-max="${safeMax}" data-live="0" data-key="${esc(b.id || (b.heading || 'rss'))}" style="border:1px solid ${t.border};border-radius:12px;overflow:hidden;background:${t.surface}">
     <div style="background:${t.primary};padding:12px 18px;display:flex;align-items:center;gap:8px;color:#fff">
       <span style="font-size:14px">📰</span>
       <span style="font-family:${t.fontMono};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#fff;font-weight:600">${esc(b.heading || 'News')}</span>
-      <span style="margin-left:auto;font-family:${t.fontMono};font-size:9px;color:rgba(255,255,255,0.7)" class="nap-rss-timestamp">${b.lastFetched ? `Updated ${new Date(b.lastFetched).toLocaleDateString()}` : 'Live'}</span>
+      <span style="margin-left:auto;font-family:${t.fontMono};font-size:9px;color:rgba(255,255,255,0.7)" class="nap-rss-timestamp">${b.lastFetched ? `Updated ${new Date(b.lastFetched).toLocaleDateString()}` : 'Snapshot'}</span>
     </div>
+    ${cfgUi}
     <div class="nap-rss-scroll">
       <div class="nap-rss-items">
-        ${urls.length > 0
-          ? `<div style="padding:24px 18px;text-align:center;color:${t.muted};font-family:${t.fontBody};font-size:13px">⏳ Fetching latest articles…</div>`
-          : (itemsHtml || `<div style="padding:24px 18px;text-align:center;color:${t.muted};font-family:${t.fontBody};font-size:13px">No feeds configured.</div>`)
-        }
+        ${(itemsHtml || (!urls.length
+          ? `<div style="padding:24px 18px;text-align:center;color:${t.muted};font-family:${t.fontBody};font-size:13px">No feeds configured.</div>`
+          : `<div style="padding:24px 18px;text-align:center;color:${t.muted};font-family:${t.fontBody};font-size:13px">Snapshot not available yet. Enable Live to fetch.</div>`))}
       </div>
     </div>
   </div>
@@ -616,17 +725,7 @@ function renderRssSidebar(b: any, t: Newsletter['theme']): string {
 }
 
 function renderFooter(b: any, t: Newsletter['theme']): string {
-  const links = ([
-    b.subscribeUrl && { label: 'Subscribe', url: b.subscribeUrl },
-    b.websiteUrl && { label: 'Website', url: b.websiteUrl },
-    b.contactEmail && { label: 'Contact', url: `mailto:${b.contactEmail}` },
-    b.unsubscribeUrl && { label: 'Unsubscribe', url: b.unsubscribeUrl },
-  ] as any[]).filter(Boolean);
-
-  const socialsHtml = (b.showSocials && (b.socials || []).length)
-    ? `<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:0 0 18px">
-        ${(b.socials || []).map((s: any) => `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" style="font-family:${t.fontBody};font-size:12px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.4)">${esc(s.platform)}</a>`).join('')}
-      </div>` : '';
+  const contactHref = `mailto:yelsherif@northwell.edu?subject=${encodeURIComponent('Neurology AI Pulse Newsletter Suggestions/Comments')}`;
 
   return `
 <div class="nap-white-section" style="background:${t.primary};padding:44px 40px 36px;text-align:center;color:#fff">
@@ -635,18 +734,24 @@ function renderFooter(b: any, t: Newsletter['theme']): string {
     <div style="font-family:${t.fontMono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.75);margin-bottom:4px">Next Issue</div>
     <div style="font-family:${t.fontBody};font-size:14px;color:#fff">${esc(b.nextIssueDate || '')}${b.nextIssueTeaser ? ` · ${esc(b.nextIssueTeaser)}` : ''}</div>
   </div>` : ''}
+
   <div style="font-family:${t.fontDisplay};font-size:22px;color:#fff;margin-bottom:4px;font-weight:400">${esc(b.institution || '')}</div>
   <div style="font-family:${t.fontBody};font-size:14px;color:rgba(255,255,255,0.85);margin-bottom:4px">${esc(b.department || '')}</div>
-  ${b.editors ? `<div style="font-family:${t.fontBody};font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:24px">${esc(b.editors)}</div>` : ''}
-  <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:24px">
-    ${links.map((l: any) => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" style="font-family:${t.fontBody};font-size:12px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.4);padding-bottom:2px">${esc(l.label)}</a>`).join('')}
+  ${b.editors ? `<div style="font-family:${t.fontBody};font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:22px">${esc(b.editors)}</div>` : ''}
+
+  <div style="display:flex;justify-content:center;margin-bottom:22px">
+    <a href="${esc(contactHref)}" style="display:inline-flex;align-items:center;gap:10px;font-family:${t.fontBody};font-size:13px;font-weight:700;color:#fff;text-decoration:none;padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.10)">
+      Contact Us <span style="opacity:0.8">✉️</span>
+    </a>
   </div>
-  ${socialsHtml}
-  <div style="height:1px;background:rgba(255,255,255,0.2);max-width:200px;margin:0 auto 20px"></div>
+
+  <div style="height:1px;background:rgba(255,255,255,0.18);max-width:240px;margin:0 auto 18px"></div>
+
   <p style="font-family:${t.fontBody};font-size:11px;color:rgba(255,255,255,0.75);margin:0 0 8px;max-width:580px;margin-left:auto;margin-right:auto;line-height:1.6">${esc(b.disclaimer || '')}</p>
   <p style="font-family:${t.fontMono};font-size:10px;color:rgba(255,255,255,0.65);margin:0;letter-spacing:0.1em">© ${esc(b.copyrightYear || '')} ${esc(b.institution || '')}</p>
 </div>`;
 }
+
 
 // ─── Runtime script ───────────────────────────────────────────────────────────
 
@@ -654,7 +759,17 @@ function runtimeScript(): string {
   return `<script>
 (function(){
   'use strict';
-  const PROXY = 'https://api.allorigins.win/raw?url=';
+  const PROXY = 'https://api.allorigins.win/get?url=';
+
+  // Preset RSS feeds (starter set). Users can add custom URLs.
+  const PRESETS = [
+    { label: 'JAMA Neurology (Online First)', url: 'https://jamanetwork.com/rss/site_16/onlineFirst_72.xml' },
+    { label: 'JAMA Neurology (Current Issue)', url: 'https://jamanetwork.com/rss/site_16/72.xml' },
+    { label: 'Practical Neurology (BMJ) – Current', url: 'https://pn.bmj.com/rss/current.xml' },
+    { label: 'Fierce Healthcare (Health IT)', url: 'https://www.fiercehealthcare.com/rss/healthit' },
+    { label: 'MIT Technology Review (AI)', url: 'https://www.technologyreview.com/feed/' },
+    { label: 'arXiv (cs.AI recent)', url: 'https://export.arxiv.org/rss/cs.AI' }
+  ];
 
   function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -682,7 +797,9 @@ function runtimeScript(): string {
     try {
       const res = await fetch(PROXY+encodeURIComponent(url),{cache:'no-store'});
       if(!res.ok) return [];
-      return parseXml(await res.text());
+      const data = await res.json();
+      const xml = (data && typeof data.contents === 'string') ? data.contents : '';
+      return parseXml(xml);
     } catch(e){ return []; }
   }
 
@@ -693,12 +810,156 @@ function runtimeScript(): string {
 
   function getCssVar(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
+  function storageKey(kind,key){ return 'nap_rss_'+kind+'_'+(key||'default'); }
+  function safeJsonParse(raw, fallback){ try{ const v=JSON.parse(raw); return v ?? fallback; }catch(e){ return fallback; } }
+
+  function getSelectedFeeds(kind, el){
+    const key = el.getAttribute('data-key') || 'default';
+    const k = storageKey(kind, key);
+    const saved = safeJsonParse(localStorage.getItem(k) || 'null', null);
+    if(Array.isArray(saved) && saved.length) return saved;
+    const raw = (kind==='sidebar') ? (el.getAttribute('data-feeds')||'[]') : (el.getAttribute('data-rss')||'[]');
+    const arr = safeJsonParse(raw, []);
+    return Array.isArray(arr) ? arr : [];
+  }
+
+  function setSelectedFeeds(kind, el, feeds){
+    const key = el.getAttribute('data-key') || 'default';
+    const k = storageKey(kind, key);
+    localStorage.setItem(k, JSON.stringify(feeds));
+    if(kind==='sidebar') el.setAttribute('data-feeds', JSON.stringify(feeds));
+    else el.setAttribute('data-rss', JSON.stringify(feeds));
+  }
+
+  function getLiveEnabled(kind, el){
+    const key = el.getAttribute('data-key') || 'default';
+    const k = storageKey(kind, key) + '_live';
+    const v = localStorage.getItem(k);
+    if(v==='1') return true;
+    return (el.getAttribute('data-live')||'0') === '1';
+  }
+
+  function setLiveEnabled(kind, el, on){
+    el.setAttribute('data-live', on ? '1' : '0');
+    const key = el.getAttribute('data-key') || 'default';
+    const k = storageKey(kind, key) + '_live';
+    localStorage.setItem(k, on ? '1' : '0');
+  }
+
+  function getMaxItems(kind, el){
+    const key = el.getAttribute('data-key') || 'default';
+    const k = storageKey(kind, key) + '_max';
+    const v = localStorage.getItem(k);
+    if(v && /^\d+$/.test(v)) return parseInt(v,10);
+    if(kind==='ticker') return parseInt(el.getAttribute('data-rss-max')||'20',10);
+    return parseInt(el.getAttribute('data-max')||'10',10);
+  }
+
+  function setMaxItems(kind, el, n){
+    const key = el.getAttribute('data-key') || 'default';
+    const k = storageKey(kind, key) + '_max';
+    const val = String(Math.min(50, Math.max(1, parseInt(n,10)||10)));
+    localStorage.setItem(k, val);
+    if(kind==='ticker') el.setAttribute('data-rss-max', val);
+    else el.setAttribute('data-max', val);
+  }
+
+  function applySidebarMax(el){
+    try{
+      const container = el.querySelector('.nap-rss-items');
+      if(!container) return;
+      const max = getMaxItems('sidebar', el);
+      const kids = Array.from(container.children);
+      kids.forEach((node, idx)=>{ node.style.display = (idx < max) ? '' : 'none'; });
+    } catch(e){}
+  }
+
+
+  function renderPresetList(el, kind){
+    const list = el.querySelector('.nap-rss-preset-list');
+    if(!list) return;
+    const selected = new Set(getSelectedFeeds(kind, el));
+    const text = kind==='ticker' ? 'rgba(255,255,255,0.92)' : (getCssVar('--c-text')||'#1A2B4A');
+    const muted = kind==='ticker' ? 'rgba(255,255,255,0.75)' : (getCssVar('--c-muted')||'#5A789A');
+    const fb=getCssVar('--f-body')||'system-ui';
+    list.innerHTML = PRESETS.map(p => {
+      const checked = selected.has(p.url) ? 'checked' : '';
+      return '<label style="display:flex;gap:8px;align-items:flex-start;font-family:'+fb+';font-size:12px;color:'+text+';line-height:1.3">'
+        + '<input type="checkbox" data-url="'+esc(p.url)+'" '+checked+' style="transform:translateY(2px)" />'
+        + '<span><span style="font-weight:600">'+esc(p.label)+'</span><br/><span style="color:'+muted+';font-size:11px">'+esc(p.url)+'</span></span>'
+        + '</label>';
+    }).join('');
+
+    list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const url = cb.getAttribute('data-url');
+        const next = new Set(getSelectedFeeds(kind, el));
+        if(cb.checked) next.add(url); else next.delete(url);
+        setSelectedFeeds(kind, el, Array.from(next));
+        const st = el.querySelector('.nap-rss-status');
+        if(st) st.textContent = 'Selected '+next.size+' feed(s).';
+      });
+    });
+  }
+
+  function wireRssConfig(el, kind){
+    const details = el.querySelector('.nap-rss-config');
+    if(!details) return;
+    const live = details.querySelector('.nap-rss-live');
+    if(live){
+      live.checked = getLiveEnabled(kind, el);
+      live.addEventListener('change', () => {
+        setLiveEnabled(kind, el, live.checked);
+        const st = el.querySelector('.nap-rss-status');
+        if(st) st.textContent = live.checked ? 'Live enabled. Refreshing…' : 'Live disabled (snapshot).';
+        if(live.checked){
+          if(kind==='sidebar') hydrateRssSidebar(el);
+          else hydrateTicker(el);
+        }
+      });
+    }
+    renderPresetList(el, kind);
+    const maxSel = details.querySelector('.nap-rss-max');
+    if(maxSel){
+      // Set initial value from persisted settings
+      maxSel.value = String(getMaxItems(kind, el));
+      maxSel.addEventListener('change', () => {
+        setMaxItems(kind, el, maxSel.value);
+        const st = el.querySelector('.nap-rss-status');
+        if(st) st.textContent = 'Items per feed: ' + getMaxItems(kind, el) + '.';
+        if(kind==='sidebar'){
+          if(getLiveEnabled('sidebar', el)) hydrateRssSidebar(el);
+          else applySidebarMax(el);
+        } else {
+          if(getLiveEnabled('ticker', el)) hydrateTicker(el);
+        }
+      });
+    }
+    const input = details.querySelector('.nap-rss-add');
+    const btn = details.querySelector('.nap-rss-add-btn');
+    function addUrl(){
+      const v = (input && input.value || '').trim();
+      if(!v) return;
+      try{ new URL(v); } catch(e){ const st=el.querySelector('.nap-rss-status'); if(st) st.textContent='Invalid URL.'; return; }
+      const next = new Set(getSelectedFeeds(kind, el));
+      next.add(v);
+      setSelectedFeeds(kind, el, Array.from(next));
+      if(input) input.value='';
+      renderPresetList(el, kind);
+      const st = el.querySelector('.nap-rss-status');
+      if(st) st.textContent='Added feed. Selected '+next.size+' feed(s).';
+    }
+    if(btn) btn.addEventListener('click', addUrl);
+    if(input) input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); addUrl(); } });
+    const st = el.querySelector('.nap-rss-status');
+    if(st) st.textContent = 'Selected '+getSelectedFeeds(kind, el).length+' feed(s).';
+  }
+
   /* ── Ticker ── */
-  async function hydrateTicker(){
-    const el=document.querySelector('.nap-ticker');
+  async function hydrateTicker(el){
     if(!el||el.getAttribute('data-source')!=='rss') return;
-    let urls=[];
-    try{urls=JSON.parse(el.getAttribute('data-rss')||'[]');}catch(e){}
+    if(!getLiveEnabled('ticker', el)) return;
+    const urls = getSelectedFeeds('ticker', el);
     if(!urls.length) return;
     const max=parseInt(el.getAttribute('data-rss-max')||'20',10);
     const all=[];
@@ -719,13 +980,12 @@ function runtimeScript(): string {
   }
 
   /* ── RSS Sidebar ── */
-  async function hydrateRssSidebar(){
-    const el=document.querySelector('.nap-rss-sidebar');
+  async function hydrateRssSidebar(el){
     if(!el) return;
-    let feeds=[];
-    try{feeds=JSON.parse(el.getAttribute('data-feeds')||'[]');}catch(e){}
+    if(!getLiveEnabled('sidebar', el)) return;
+    const feeds = getSelectedFeeds('sidebar', el);
     if(!feeds.length) return;
-    const max=parseInt(el.getAttribute('data-max')||'10',10);
+    const max=getMaxItems('sidebar', el);
     const all=[];
     for(const u of feeds){
       const items=await fetchFeed(u);
@@ -762,6 +1022,7 @@ function runtimeScript(): string {
     }).join('');
     /* Update timestamp */
     const ts=el.querySelector('.nap-rss-timestamp');
+    applySidebarMax(el);
     if(ts) ts.textContent='Updated '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
   }
 
@@ -803,29 +1064,33 @@ function runtimeScript(): string {
     });
   }
 
-  hydrateTicker();
-  hydrateRssSidebar();
+  // Wire RSS config UIs (snapshot-first; live optional)
+  document.querySelectorAll('.nap-ticker[data-source="rss"]').forEach(el=>wireRssConfig(el,'ticker'));
+  document.querySelectorAll('.nap-rss-sidebar').forEach(el=>wireRssConfig(el,'sidebar'));
+  document.querySelectorAll('.nap-rss-sidebar').forEach(el=>applySidebarMax(el));
+
+  // Only hydrate if live is enabled (persisted)
+  document.querySelectorAll('.nap-ticker[data-source="rss"]').forEach(el=>{ if(getLiveEnabled('ticker', el)) hydrateTicker(el); });
+  document.querySelectorAll('.nap-rss-sidebar').forEach(el=>{ if(getLiveEnabled('sidebar', el)) hydrateRssSidebar(el); });
   initCopyButtons();
   initExpandButtons();
 
   /* ── Hourly live refresh ── */
   const REFRESH_MS = 60 * 60 * 1000; // 1 hour
   setInterval(function() {
-    hydrateTicker();
-    hydrateRssSidebar();
+    document.querySelectorAll('.nap-ticker[data-source="rss"]').forEach(el=>{ if(getLiveEnabled('ticker', el)) hydrateTicker(el); });
+    document.querySelectorAll('.nap-rss-sidebar').forEach(el=>{ if(getLiveEnabled('sidebar', el)) hydrateRssSidebar(el); });
   }, REFRESH_MS);
 
   /* Show a subtle "Live" indicator on the RSS sidebar header */
-  const rssEl = document.querySelector('.nap-rss-sidebar');
-  if (rssEl) {
+  document.querySelectorAll('.nap-rss-sidebar').forEach(function(rssEl){
     const header = rssEl.querySelector('div');
-    if (header) {
-      const dot = document.createElement('span');
-      dot.title = 'Updates every hour';
-      dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:#00A651;display:inline-block;margin-left:auto;animation:nap_pulse 2s ease-in-out infinite';
-      header.appendChild(dot);
-    }
-  }
+    if (!header) return;
+    const dot = document.createElement('span');
+    dot.title = 'Updates every hour (when Live is enabled)';
+    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:#00A651;display:inline-block;margin-left:auto;animation:nap_pulse 2s ease-in-out infinite;opacity:0.85';
+    header.appendChild(dot);
+  });
 })();
 <\/script>`;
 }
@@ -846,6 +1111,8 @@ function blockToHtml(block: Block, theme: Newsletter['theme']): string {
     case 'html-embed':                return renderHtmlEmbed(b, theme);
     case 'prompt-masterclass':        return renderPromptMasterclass(b, theme);
     case 'sbar-prompt':               return renderSbarPrompt(b, theme);
+    case 'prompt-template':           return renderPromptTemplate(b, theme);
+    case 'safety-reminders':          return renderSafetyReminders(b, theme);
     case 'clinical-prompt-templates': return renderClinicalPromptTemplates(b, theme);
     case 'term-of-month':             return renderTermOfMonth(b, theme);
     case 'ai-case-file':              return renderAiCaseFile(b, theme);
@@ -863,9 +1130,14 @@ function blockToHtml(block: Block, theme: Newsletter['theme']): string {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export function exportToHtml(newsletter: Newsletter): string {
+export function exportToHtml(
+  newsletter: Newsletter,
+  opts?: { baseFontPx?: number; extraCss?: string }
+): string {
   const { theme, blocks, blockOrder } = newsletter;
   const body = blockOrder.map(id => blocks[id] ? blockToHtml(blocks[id], theme) : '').join('\n');
+  const baseFontPx = opts?.baseFontPx;
+  const extraCss = opts?.extraCss || '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -876,15 +1148,14 @@ export function exportToHtml(newsletter: Newsletter): string {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,300;1,9..40,400&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
-${getExportCss(theme)}
+${getExportCss(theme, baseFontPx)}
+${extraCss}
 </style>
 </head>
 <body>
 <div class="nap-export-wrap">
-  <div class="nap-export-scale">
-    <div class="nap-shell">
-    ${body}
-    </div>
+  <div class="nap-shell">
+  ${body}
   </div>
 </div>
 ${runtimeScript()}
@@ -893,7 +1164,39 @@ ${runtimeScript()}
 }
 
 export function downloadHtml(newsletter: Newsletter) {
-  const html = exportToHtml(newsletter);
+  // Capture the *actual* typography CSS that the editor/preview is using.
+  // This makes the exported HTML match the in-app rendering 1:1.
+  let extraCss = '';
+  try {
+    const sheets = Array.from(document.styleSheets || []);
+    const chunks: string[] = [];
+    for (const s of sheets) {
+      try {
+        const rules = (s as CSSStyleSheet).cssRules;
+        if (!rules) continue;
+        for (const r of Array.from(rules)) chunks.push(r.cssText);
+      } catch {
+        // Cross-origin stylesheets can't be read; ignore.
+      }
+    }
+    extraCss = chunks.join('\n');
+  } catch {
+    extraCss = '';
+  }
+
+  // Match the app's root font size.
+  const baseFontPx = (() => {
+    try {
+      const n = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      // Export slightly smaller than the editor to better match typical email/newsletter rendering.
+      // This improves perceived fidelity when viewed in browsers and email clients.
+      return Number.isFinite(n) ? Math.max(12, n * 0.92) : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  const html = exportToHtml(newsletter, { baseFontPx, extraCss });
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

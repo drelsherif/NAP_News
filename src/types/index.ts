@@ -12,6 +12,8 @@ export type BlockType =
   | 'html-embed'
   | 'prompt-masterclass'
   | 'sbar-prompt'
+  | 'prompt-template'
+  | 'safety-reminders'
   | 'clinical-prompt-templates'
   | 'term-of-month'
   | 'ai-case-file'
@@ -159,6 +161,20 @@ export interface SbarPromptBlock {
   steps: SbarStep[];
   templatePrompt: string;
   safetyTips: string[];
+}
+
+export interface PromptTemplateBlock {
+  id: string; type: 'prompt-template';
+  heading: string;
+  /** Plain text prompt content. Rendered as a mono <pre> and can be copied. */
+  prompt: string;
+}
+
+export interface SafetyRemindersBlock {
+  id: string; type: 'safety-reminders';
+  heading: string;
+  /** 1–n reminder bullets (defaults seeded from standard options) */
+  items: string[];
 }
 
 export interface TermOfMonthBlock {
@@ -309,6 +325,8 @@ export interface RssSidebarBlock {
   lastFetched: string;
   position: 'inline' | 'sidebar-right';
   refreshOnView: boolean;
+  /** If true, render a fixed-height scroll area. If false, expand to show all items (better for export). */
+  enableScroll?: boolean;
 }
 
 // Block Union extended
@@ -324,6 +342,8 @@ export type Block =
   | HtmlEmbedBlock
   | PromptMasterclassBlock
   | SbarPromptBlock
+  | PromptTemplateBlock
+  | SafetyRemindersBlock
   | ClinicalPromptTemplatesBlock
   | TermOfMonthBlock
   | AiCaseFileBlock

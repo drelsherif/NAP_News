@@ -8,7 +8,9 @@ const DEFAULT_FEEDS: RssFeedConfig[] = [
   { url: 'https://pubmed.ncbi.nlm.nih.gov/rss/search/1/?term=EEG+machine+learning&sort=date', label: 'PubMed – EEG ML', enabled: false },
 ];
 
-const PROXY = 'https://api.allorigins.win/raw?url=';
+// NOTE: /raw is frequently blocked on custom domains due to CORS.
+// AllOrigins /get returns JSON with the RSS/Atom XML in `contents`.
+const PROXY = 'https://api.allorigins.win/get?url=';
 
 function parseXml(xml: string, feedLabel: string): RssItem[] {
   try {
@@ -61,7 +63,8 @@ export function useRss() {
       try {
         const res = await fetch(PROXY + encodeURIComponent(feed.url), { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const xml = await res.text();
+        const data = await res.json();
+        const xml = (data && typeof (data as any).contents === 'string') ? (data as any).contents : '';
         allItems.push(...parseXml(xml, feed.label));
       } catch (e: any) {
         newErrors.push(`${feed.label}: ${e.message}`);

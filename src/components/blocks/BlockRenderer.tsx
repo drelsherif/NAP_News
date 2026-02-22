@@ -3,7 +3,7 @@ import type { Block, Newsletter, Article } from '../../types';
 import {
   HeaderBlock, TickerBlock, SectionDividerBlock, ArticleGridBlock, SpotlightBlock,
   EthicsSplitBlock, ImageBlock, TextBlock, HtmlEmbedBlock, PromptMasterclassBlock,
-  SbarPromptBlock, ClinicalPromptTemplatesBlock, TermOfMonthBlock, AiCaseFileBlock,
+  SbarPromptBlock, PromptTemplateBlock, SafetyRemindersBlock, ClinicalPromptTemplatesBlock, TermOfMonthBlock, AiCaseFileBlock,
   QuickHitsBlock, HumorBlock, SpacerBlock, FooterBlock,
   AiSafetyBlock, NorthwellSpotlightBlock, RssSidebarBlock,
 } from './AllBlocks';
@@ -41,6 +41,8 @@ export function BlockRenderer({ block, theme, newsletter, editable, onUpdateBloc
     case 'html-embed':                return <HtmlEmbedBlock block={block} {...sharedProps} />;
     case 'prompt-masterclass':        return <PromptMasterclassBlock block={block} {...sharedProps} />;
     case 'sbar-prompt':               return <SbarPromptBlock block={block} {...sharedProps} />;
+    case 'prompt-template':           return <PromptTemplateBlock block={block} {...sharedProps} />;
+    case 'safety-reminders':          return <SafetyRemindersBlock block={block} {...sharedProps} />;
     case 'clinical-prompt-templates': return <ClinicalPromptTemplatesBlock block={block} {...sharedProps} />;
     case 'term-of-month':             return <TermOfMonthBlock block={block} {...sharedProps} />;
     case 'ai-case-file':              return <AiCaseFileBlock block={block} {...sharedProps} />;

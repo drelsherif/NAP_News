@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
-import type { Block, Newsletter, Article, QuickHit } from '../../types';
+import type { Block, Newsletter, Article, QuickHit, SafetyUpdate } from '../../types';
 import { Field, inputStyle, textareaStyle } from './Sidebar';
+import { RSS_PRESETS } from '../../data/rssPresets';
 
 interface Props {
   block: Block;
@@ -45,6 +46,8 @@ export function BlockSettingsPanel({ block, onClose, onUpdateBlock, onAddArticle
         {block.type === 'html-embed' && <HtmlSettings block={block as any} upd={upd} />}
         {block.type === 'prompt-masterclass' && <PromptSettings block={block as any} upd={upd} />}
         {block.type === 'sbar-prompt' && <SbarSettings block={block as any} upd={upd} />}
+        {block.type === 'prompt-template' && <PromptTemplateSettings block={block as any} upd={upd} />}
+        {block.type === 'safety-reminders' && <SafetyRemindersSettings block={block as any} upd={upd} />}
         {block.type === 'term-of-month' && <TermSettings block={block as any} upd={upd} />}
         {block.type === 'ai-case-file' && <AiCaseFileSettingsExtended block={block as any} upd={upd} />}
         {block.type === 'quick-hits' && (
@@ -56,6 +59,7 @@ export function BlockSettingsPanel({ block, onClose, onUpdateBlock, onAddArticle
         {block.type === 'humor' && <HumorSettingsExtended block={block as any} upd={upd} />}
         {block.type === 'spacer' && <SpacerSettings block={block as any} upd={upd} />}
         {block.type === 'footer' && <FooterSettings block={block as any} upd={upd} />}
+        {block.type === 'ai-safety' && <AiSafetySettings block={block as any} upd={upd} />}
         {block.type === 'northwell-spotlight' && <NorthwellSpotlightSettings block={block as any} upd={upd} />}
         {block.type === 'rss-sidebar' && <RssSidebarSettings block={block as any} upd={upd} />}
         {block.type === 'clinical-prompt-templates' && <ClinicalPromptTemplateSettings block={block as any} upd={upd} />}
@@ -231,6 +235,98 @@ function EthicsSettings({ block, upd }: any) {
   </>);
 }
 
+function AiSafetySettings({ block, upd }: any) {
+  const updates: SafetyUpdate[] = block.updates || [];
+
+  const patchUpdate = (id: string, changes: Partial<SafetyUpdate>) => {
+    const next = updates.map(u => (u.id === id ? { ...u, ...changes } : u));
+    upd({ updates: next });
+  };
+
+  const addUpdate = () => {
+    const id = `su_${Math.random().toString(36).slice(2, 10)}`;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const next: SafetyUpdate = {
+      id,
+      date: `${yyyy}-${mm}-${dd}`,
+      category: 'Guideline',
+      title: 'New safety update',
+      summary: 'Edit this safety recommendation and add a link (optional).',
+      url: '',
+      severity: 'informational',
+    };
+    upd({ updates: [...updates, next] });
+  };
+
+  const removeUpdate = (id: string) => {
+    upd({ updates: updates.filter(u => u.id !== id) });
+  };
+
+  return (<>
+    <Field label="Heading">
+      <input style={inputStyle} value={block.heading} onChange={e => upd({ heading: e.target.value })} />
+    </Field>
+    <Field label="Subheading">
+      <textarea style={textareaStyle} value={block.subheading} onChange={e => upd({ subheading: e.target.value })} />
+    </Field>
+    <Field label="Show last updated">
+      <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--color-text)' }}>
+        <input type="checkbox" checked={!!block.showLastUpdated} onChange={e => upd({ showLastUpdated: e.target.checked })} />
+        Display "last updated" date
+      </label>
+    </Field>
+
+    <div style={{ marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{updates.length} Updates</span>
+        <button onClick={addUpdate}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: 'var(--color-accent)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
+          <Plus size={12} /> Add Update
+        </button>
+      </div>
+
+      {updates.map((u) => (
+        <div key={u.id} style={{ border: '1px solid var(--color-border)', borderRadius: 10, padding: 12, marginBottom: 12, background: 'var(--color-surface)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Safety update</span>
+            <button onClick={() => removeUpdate(u.id)}
+              style={{ background: '#FEF0EE', border: '1px solid #f5c6c0', borderRadius: 8, color: '#7A1E12', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontFamily: 'var(--font-body)' }}>
+              Remove
+            </button>
+          </div>
+          <Field label="Date"><input style={inputStyle} type="date" value={u.date} onChange={e => patchUpdate(u.id, { date: e.target.value })} /></Field>
+          <Field label="Category">
+            <select style={inputStyle} value={u.category} onChange={e => patchUpdate(u.id, { category: e.target.value as any })}>
+              <option value="FDA">FDA</option>
+              <option value="Policy">Policy</option>
+              <option value="Guideline">Guideline</option>
+              <option value="Incident">Incident</option>
+              <option value="Alert">Alert</option>
+              <option value="Research">Research</option>
+            </select>
+          </Field>
+          <Field label="Severity">
+            <select style={inputStyle} value={u.severity} onChange={e => patchUpdate(u.id, { severity: e.target.value as any })}>
+              <option value="critical">critical</option>
+              <option value="high">high</option>
+              <option value="medium">medium</option>
+              <option value="informational">informational</option>
+            </select>
+          </Field>
+          <Field label="Title"><input style={inputStyle} value={u.title} onChange={e => patchUpdate(u.id, { title: e.target.value })} /></Field>
+          <Field label="URL"><input style={inputStyle} value={u.url} onChange={e => patchUpdate(u.id, { url: e.target.value })} placeholder="https://… (optional)" /></Field>
+          <Field label="Safety recommendation / summary">
+            <textarea style={{ ...textareaStyle, minHeight: 90 }} value={u.summary} onChange={e => patchUpdate(u.id, { summary: e.target.value })} />
+          </Field>
+        </div>
+      ))}
+    </div>
+  </>);
+}
+
 function ImageSettings({ block, upd }: any) {
   const fileRef = useRef<HTMLInputElement>(null);
   return (<>
@@ -338,7 +434,70 @@ function SbarSettings({ block, upd }: any) {
         </Field>
       </div>
     ))}
-    <Field label="Template Prompt"><textarea style={{ ...textareaStyle, minHeight: 160, fontFamily: 'var(--font-mono)', fontSize: 12 }} value={block.templatePrompt} onChange={e => upd({ templatePrompt: e.target.value })} /></Field>
+  </>);
+}
+
+function PromptTemplateSettings({ block, upd }: any) {
+  return (<>
+    <Field label="Heading"><input style={inputStyle} value={block.heading} onChange={e => upd({ heading: e.target.value })} /></Field>
+    <Field label="Prompt" hint="Plain text. Rendered as a collapsible, copyable <pre> in the newsletter.">
+      <textarea style={{ ...textareaStyle, minHeight: 220, fontFamily: 'var(--font-mono)', fontSize: 12 }} value={block.prompt} onChange={e => upd({ prompt: e.target.value })} />
+    </Field>
+  </>);
+}
+
+const STANDARD_SAFETY_REMINDERS = [
+  'Always verify AI-generated clinical reasoning against primary sources before acting.',
+  'Never submit patient-identifiable information (PHI) to consumer AI tools — use only approved institutional platforms.',
+  'AI supports clinical judgment; it does not replace it. Final decisions remain with the treating clinician.',
+  'Document AI tool use in the medical record where institutional policy requires it.',
+];
+
+function SafetyRemindersSettings({ block, upd }: any) {
+  const items: string[] = Array.isArray(block.items) ? block.items : [];
+  const toggleStandard = (txt: string, on: boolean) => {
+    const next = on
+      ? Array.from(new Set([...items, txt]))
+      : items.filter(x => x !== txt);
+    upd({ items: next });
+  };
+
+  const updateCustom = (val: string) => {
+    // Allow mixed standard + custom. Custom edits are one per line.
+    const customLines = val.split('\n').map(s => s.trim()).filter(Boolean);
+    const standards = STANDARD_SAFETY_REMINDERS.filter(s => items.includes(s));
+    upd({ items: [...standards, ...customLines] });
+  };
+
+  const customOnly = items.filter(x => !STANDARD_SAFETY_REMINDERS.includes(x));
+
+  return (<>
+    <Field label="Heading"><input style={inputStyle} value={block.heading} onChange={e => upd({ heading: e.target.value })} /></Field>
+
+    <Field label="Standard reminders" hint="Choose 1–4 defaults, then optionally add custom lines below.">
+      <div style={{ display: 'grid', gap: 8 }}>
+        {STANDARD_SAFETY_REMINDERS.map((txt) => (
+          <label key={txt} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={items.includes(txt)}
+              onChange={(e) => toggleStandard(txt, e.target.checked)}
+              style={{ accentColor: 'var(--color-accent)', marginTop: 2 }}
+            />
+            <span style={{ color: 'var(--color-text)', lineHeight: 1.45 }}>{txt}</span>
+          </label>
+        ))}
+      </div>
+    </Field>
+
+    <Field label="Custom reminders" hint="One per line. These are added in addition to checked defaults.">
+      <textarea
+        style={{ ...textareaStyle, minHeight: 140, fontFamily: 'var(--font-body)', fontSize: 13 }}
+        value={customOnly.join('\n')}
+        onChange={(e) => updateCustom(e.target.value)}
+        placeholder="Add your own reminder lines…"
+      />
+    </Field>
   </>);
 }
 
@@ -550,6 +709,35 @@ function TickerSettingsExtended({ block, upd }: any) {
           RSS settings
         </summary>
         <div style={{ marginTop: 10 }}>
+          <Field
+            label="Quick add from presets"
+            hint="Select a preset to append it to your RSS list. You can still edit/remove URLs below."
+          >
+            <select
+              style={inputStyle}
+              defaultValue=""
+              onChange={(e) => {
+                const id = e.target.value;
+                if (!id) return;
+                const preset = RSS_PRESETS.find((p) => p.id === id);
+                if (!preset) return;
+                const existing = (block.rssUrls || []).map((u: string) => u.trim()).filter(Boolean);
+                if (!existing.includes(preset.url)) {
+                  const next = [...existing, preset.url];
+                  setRssText(next.join('\n'));
+                  upd({ rssUrls: next });
+                }
+                // reset select
+                e.currentTarget.value = '';
+              }}
+            >
+              <option value="">— Choose a feed —</option>
+              {RSS_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+            </select>
+          </Field>
+
           <Field label="RSS URLs (one per line)">
             <textarea
               style={{ ...textareaStyle, minHeight: 110 }}
@@ -737,7 +925,7 @@ function NorthwellSpotlightSettings({ block, upd }: any) {
 function RssSidebarSettings({ block, upd }: any) {
   const [fetching, setFetching] = React.useState(false);
   const [error, setError] = React.useState('');
-  const PROXY = 'https://api.allorigins.win/raw?url=';
+  const PROXY = 'https://api.allorigins.win/get?url=';
 
   const handleFetch = async () => {
     setFetching(true); setError('');
@@ -745,7 +933,8 @@ function RssSidebarSettings({ block, upd }: any) {
     for (const url of (block.feedUrls || [])) {
       try {
         const res = await fetch(PROXY + encodeURIComponent(url));
-        const xml = await res.text();
+        const data = await res.json();
+        const xml = (data && typeof data.contents === 'string') ? data.contents : '';
         const parser = new DOMParser();
         const doc = parser.parseFromString(xml, 'text/xml');
         const channelTitle = doc.querySelector('channel > title')?.textContent?.trim() || url;
@@ -769,6 +958,34 @@ function RssSidebarSettings({ block, upd }: any) {
   return (<>
     <Field label="Heading"><input style={inputStyle} value={block.heading} onChange={e => upd({ heading: e.target.value })} /></Field>
     <Field label="Max Items (3–20)"><input style={inputStyle} type="number" min={3} max={20} value={block.maxItems || 8} onChange={e => upd({ maxItems: Number(e.target.value) })} /></Field>
+    <Field label="Scrolling" hint="If off, the RSS box will expand to show all items (recommended for export).">
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer' }}>
+        <input type="checkbox" checked={!!block.enableScroll} onChange={e => upd({ enableScroll: e.target.checked })} style={{ accentColor: 'var(--color-accent)' }} />
+        Enable internal scroll (fixed height)
+      </label>
+    </Field>
+    <Field label="Quick add from presets" hint="Append a known-working feed URL.">
+      <select
+        style={inputStyle}
+        defaultValue=""
+        onChange={(e) => {
+          const id = e.target.value;
+          if (!id) return;
+          const preset = RSS_PRESETS.find((p) => p.id === id);
+          if (!preset) return;
+          const existing = (block.feedUrls || []).map((u: string) => u.trim()).filter(Boolean);
+          if (!existing.includes(preset.url)) {
+            upd({ feedUrls: [...existing, preset.url] });
+          }
+          e.currentTarget.value = '';
+        }}
+      >
+        <option value="">— Choose a feed —</option>
+        {RSS_PRESETS.map((p) => (
+          <option key={p.id} value={p.id}>{p.label}</option>
+        ))}
+      </select>
+    </Field>
     <Field label={`RSS Feed URLs (${(block.feedUrls || []).length})`} hint="One URL per line">
       <textarea style={{ ...textareaStyle, minHeight: 120, fontFamily: 'var(--font-mono)', fontSize: 11 }}
         value={(block.feedUrls || []).join('\n')}
