@@ -157,6 +157,28 @@ function renderTicker(b: any, t: Newsletter['theme']): string {
       <label style="display:flex;align-items:center;gap:8px;font-family:${t.fontBody};font-size:12px;color:#fff;margin-bottom:10px">
         <input type="checkbox" class="nap-rss-live" style="transform:translateY(1px)" /> Live RSS
       </label>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-family:${t.fontBody};font-size:12px;color:#fff">Feeds</div>
+        <select class="nap-rss-maxfeeds" style="margin-left:auto;padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-family:${t.fontBody};font-size:12px">
+          <option value="5">5</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-family:${t.fontBody};font-size:12px;color:#fff">Items total</div>
+        <select class="nap-rss-max" style="margin-left:auto;padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-family:${t.fontBody};font-size:12px">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+          <option value="50">50</option>
+        </select>
+      </div>
       <div class="nap-rss-preset-list" style="display:grid;gap:6px"></div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <input class="nap-rss-add" placeholder="Add RSS URL" style="flex:1;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-family:${t.fontBody};font-size:12px" />
@@ -685,6 +707,18 @@ function renderRssSidebar(b: any, t: Newsletter['theme']): string {
           <input type="checkbox" class="nap-rss-live" style="transform:translateY(1px)" /> Live RSS
         </label>
         <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:${t.fontBody};font-size:12px;color:${t.text}">Feeds</div>
+          <select class="nap-rss-maxfeeds" style="margin-left:auto;padding:6px 10px;border-radius:10px;border:1px solid ${
+              t.border};background:${t.surface};color:${t.text};font-family:${t.fontBody};font-size:12px">
+            <option value="5">5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
           <div style="font-family:${t.fontBody};font-size:12px;color:${t.text}">Items per feed</div>
           <select class="nap-rss-max" style="margin-left:auto;padding:6px 10px;border-radius:10px;border:1px solid ${t.border};background:${t.surface};color:${t.text};font-family:${t.fontBody};font-size:12px">
             <option value="3">3</option>
@@ -763,12 +797,15 @@ function runtimeScript(): string {
 
   // Preset RSS feeds (starter set). Users can add custom URLs.
   const PRESETS = [
-    { label: 'JAMA Neurology (Online First)', url: 'https://jamanetwork.com/rss/site_16/onlineFirst_72.xml' },
-    { label: 'JAMA Neurology (Current Issue)', url: 'https://jamanetwork.com/rss/site_16/72.xml' },
-    { label: 'Practical Neurology (BMJ) – Current', url: 'https://pn.bmj.com/rss/current.xml' },
-    { label: 'Fierce Healthcare (Health IT)', url: 'https://www.fiercehealthcare.com/rss/healthit' },
-    { label: 'MIT Technology Review (AI)', url: 'https://www.technologyreview.com/feed/' },
-    { label: 'arXiv (cs.AI recent)', url: 'https://export.arxiv.org/rss/cs.AI' }
+    { label: 'Frontiers in Neuroscience — RSS', url: 'https://www.frontiersin.org/journals/neuroscience/rss' },
+    { label: 'Frontiers in Neurology — RSS', url: 'https://www.frontiersin.org/journals/neurology/rss' },
+    { label: 'MIT News — Artificial Intelligence', url: 'https://news.mit.edu/rss/topic/artificial-intelligence2' },
+    { label: 'ScienceDaily — Artificial Intelligence', url: 'https://www.sciencedaily.com/rss/computers_math/artificial_intelligence.xml' },
+    { label: 'MarkTechPost — AI News', url: 'https://www.marktechpost.com/feed/' },
+    { label: 'The Lancet Neurology — Current', url: 'https://www.thelancet.com/rssfeed/laneur_current.xml' },
+    { label: 'JAMA Neurology — RSS', url: 'https://jamanetwork.com/rss/site_16/0.xml' },
+    { label: 'npj Digital Medicine — RSS', url: 'https://www.nature.com/npjdigitalmed.rss' },
+    { label: 'PubMed RSS — Neurology AI Search', url: 'https://pubmed.ncbi.nlm.nih.gov/rss/search/1x9bY_ZPGMIgWOrGWvQbkjt2X1J5zCH66gaj5UHwPTuOP_TklI/?limit=15&utm_campaign=pubmed-2&fc=20260222062849' }
   ];
 
   function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -855,7 +892,25 @@ function runtimeScript(): string {
     return parseInt(el.getAttribute('data-max')||'10',10);
   }
 
-  function setMaxItems(kind, el, n){
+  function getMaxFeeds(kind, el){
+    const key = el.getAttribute('data-key') || 'default';
+    const k = storageKey(kind, key) + '_maxfeeds';
+    const v = localStorage.getItem(k);
+    if(v && /^\d+$/.test(v)) return parseInt(v,10);
+    const attr = el.getAttribute('data-max-feeds');
+    if(attr && /^\d+$/.test(attr)) return parseInt(attr,10);
+    return 10; // default
+  }
+
+  function setMaxFeeds(kind, el, n){
+    const key = el.getAttribute('data-key') || 'default';
+    const k = storageKey(kind, key) + '_maxfeeds';
+    const val = String(Math.min(20, Math.max(5, parseInt(n,10)||10)));
+    localStorage.setItem(k, val);
+    el.setAttribute('data-max-feeds', val);
+  }
+
+function setMaxItems(kind, el, n){
     const key = el.getAttribute('data-key') || 'default';
     const k = storageKey(kind, key) + '_max';
     const val = String(Math.min(50, Math.max(1, parseInt(n,10)||10)));
@@ -875,6 +930,19 @@ function runtimeScript(): string {
   }
 
 
+  const CUSTOM_PRESETS_KEY = 'nap_rss_custom_presets_v1';
+  function loadCustomPresets(){
+    const raw = localStorage.getItem(CUSTOM_PRESETS_KEY);
+    const arr = safeJsonParse(raw || '[]', []);
+    return Array.isArray(arr) ? arr.filter(x=>x && x.url) : [];
+  }
+  function saveCustomPresets(arr){
+    try{ localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(arr||[])); }catch(e){}
+  }
+  function deriveLabel(url){
+    try{ const u=new URL(url); return u.hostname.replace(/^www\./,''); }catch(e){ return 'Custom RSS'; }
+  }
+
   function renderPresetList(el, kind){
     const list = el.querySelector('.nap-rss-preset-list');
     if(!list) return;
@@ -882,13 +950,33 @@ function runtimeScript(): string {
     const text = kind==='ticker' ? 'rgba(255,255,255,0.92)' : (getCssVar('--c-text')||'#1A2B4A');
     const muted = kind==='ticker' ? 'rgba(255,255,255,0.75)' : (getCssVar('--c-muted')||'#5A789A');
     const fb=getCssVar('--f-body')||'system-ui';
-    list.innerHTML = PRESETS.map(p => {
+    const customs = loadCustomPresets();
+    const allPresets = PRESETS.concat(customs);
+    list.innerHTML = allPresets.map(p => {
       const checked = selected.has(p.url) ? 'checked' : '';
+      const isCustom = !PRESETS.some(x=>x.url===p.url);
+      const removeBtn = isCustom ? '<button type="button" data-remove="'+esc(p.url)+'" style="margin-left:auto;border:none;background:transparent;color:'+muted+';cursor:pointer;font-size:14px;line-height:1">×</button>' : '';
       return '<label style="display:flex;gap:8px;align-items:flex-start;font-family:'+fb+';font-size:12px;color:'+text+';line-height:1.3">'
         + '<input type="checkbox" data-url="'+esc(p.url)+'" '+checked+' style="transform:translateY(2px)" />'
-        + '<span><span style="font-weight:600">'+esc(p.label)+'</span><br/><span style="color:'+muted+';font-size:11px">'+esc(p.url)+'</span></span>'
+        + '<span style="flex:1"><span style="font-weight:600">'+esc(p.label||deriveLabel(p.url))+'</span><br/><span style="color:'+muted+';font-size:11px">'+esc(p.url)+'</span></span>'
+        + removeBtn
         + '</label>';
     }).join('');
+
+    list.querySelectorAll('button[data-remove]').forEach(btn => {
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const url = btn.getAttribute('data-remove');
+        const customs = loadCustomPresets().filter(x=>x.url!==url);
+        saveCustomPresets(customs);
+        const next = new Set(getSelectedFeeds(kind, el));
+        next.delete(url);
+        setSelectedFeeds(kind, el, Array.from(next));
+        renderPresetList(el, kind);
+        const st = el.querySelector('.nap-rss-status');
+        if(st) st.textContent = 'Removed custom feed.';
+      });
+    });
 
     list.querySelectorAll('input[type=checkbox]').forEach(cb => {
       cb.addEventListener('change', () => {
@@ -919,6 +1007,19 @@ function runtimeScript(): string {
       });
     }
     renderPresetList(el, kind);
+    const maxFeedsSel = details.querySelector('.nap-rss-maxfeeds');
+    if(maxFeedsSel){
+      maxFeedsSel.value = String(getMaxFeeds(kind, el));
+      maxFeedsSel.addEventListener('change', () => {
+        setMaxFeeds(kind, el, maxFeedsSel.value);
+        const st = el.querySelector('.nap-rss-status');
+        if(st) st.textContent = 'Max feeds: ' + getMaxFeeds(kind, el) + '.';
+        if(getLiveEnabled(kind, el)){
+          if(kind==='sidebar') hydrateRssSidebar(el);
+          else hydrateTicker(el);
+        }
+      });
+    }
     const maxSel = details.querySelector('.nap-rss-max');
     if(maxSel){
       // Set initial value from persisted settings
@@ -944,6 +1045,14 @@ function runtimeScript(): string {
       const next = new Set(getSelectedFeeds(kind, el));
       next.add(v);
       setSelectedFeeds(kind, el, Array.from(next));
+      // Persist custom preset so it appears in the dropdown later
+      if(!PRESETS.some(p=>p.url===v)){
+        const customs = loadCustomPresets();
+        if(!customs.some(p=>p.url===v)){
+          customs.unshift({ label: deriveLabel(v), url: v });
+          saveCustomPresets(customs.slice(0, 100));
+        }
+      }
       if(input) input.value='';
       renderPresetList(el, kind);
       const st = el.querySelector('.nap-rss-status');
@@ -959,7 +1068,9 @@ function runtimeScript(): string {
   async function hydrateTicker(el){
     if(!el||el.getAttribute('data-source')!=='rss') return;
     if(!getLiveEnabled('ticker', el)) return;
-    const urls = getSelectedFeeds('ticker', el);
+    const urlsAll = getSelectedFeeds('ticker', el);
+    const maxFeeds = getMaxFeeds('ticker', el);
+    const urls = urlsAll.slice(0, maxFeeds);
     if(!urls.length) return;
     const max=parseInt(el.getAttribute('data-rss-max')||'20',10);
     const all=[];
@@ -983,7 +1094,9 @@ function runtimeScript(): string {
   async function hydrateRssSidebar(el){
     if(!el) return;
     if(!getLiveEnabled('sidebar', el)) return;
-    const feeds = getSelectedFeeds('sidebar', el);
+    const feedsAll = getSelectedFeeds('sidebar', el);
+    const maxFeeds = getMaxFeeds('sidebar', el);
+    const feeds = feedsAll.slice(0, maxFeeds);
     if(!feeds.length) return;
     const max=getMaxItems('sidebar', el);
     const all=[];

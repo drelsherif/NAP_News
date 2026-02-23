@@ -109,8 +109,38 @@ src/
 - **Import JSON** — reload from any `.json` backup
 
 ### Export
-- **Export HTML** — standalone, self-contained HTML file with all fonts, styles, and images (base64) embedded. Works in email clients.
-- **Export JSON** — full state backup for re-importing into the builder
+
+This project now supports **pixel-identical** exports by reusing the **same React renderer + CSS** in a read-only Preview route.
+
+#### 1) Export JSON (snapshot)
+- In the app: **TopBar → Export JSON**.
+- Rename the downloaded file to: `newsletter.json`
+- Place it in the project root (same folder as package.json).
+
+#### 2A) Web export folder (host-ready)
+Build then generate an export folder containing `dist/` + `newsletter.json`:
+
+```bash
+npm run build
+npm run export:web
+```
+
+Upload the **contents** of `export_web/` to your hosting (GoDaddy / GitHub Pages). It auto-loads **#/preview**.
+
+RSS behavior:
+- **Live fetch** runs at runtime when internet is available.
+- The last saved snapshot (stored in JSON) is shown when offline.
+
+#### 2B) Single-file export (share/attach)
+
+```bash
+npm run build
+npm run export:single
+```
+
+This creates `export_single.html` which can be opened locally in a browser.
+
+> Note: many email clients strip scripts, so `export_single.html` is best as an attachment or hosted file.
 
 ## Extending
 

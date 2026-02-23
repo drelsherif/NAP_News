@@ -1118,7 +1118,90 @@ export function NorthwellSpotlightBlock({ block, theme }: { block: NorthwellSpot
 }
 
 // ─── RSS Sidebar Panel ────────────────────────────────────────────────────────
-export function RssSidebarBlock({ block, theme }: { block: RssSidebarBlockType; theme: T; newsletter: any; onUpdateBlock: any }) {
+export function RssSidebarBlock({ block, theme, editable, onUpdateBlock }: { block: RssSidebarBlockType; theme: T; editable?: boolean; newsletter: any; onUpdateBlock: (c: Partial<RssSidebarBlockType>) => void }) {
+  const PROXY = 'https://api.allorigins.win/get?url=';
+  const [liveItems, setLiveItems] = useState(block.items || []);
+  const [liveFetched, setLiveFetched] = useState(block.lastFetched || '');
+
+  const parseXml = useCallback((xml: string, feedLabel: string) => {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, 'text/xml');
+      if (doc.querySelector('parsererror')) return [] as { title: string; url: string; source: string; pubDate: string }[];
+
+      const rssItems = Array.from(doc.querySelectorAll('item'));
+      if (rssItems.length) {
+        return rssItems.map(el => ({
+          title: el.querySelector('title')?.textContent?.trim() || '',
+          url: el.querySelector('link')?.textContent?.trim() || '',
+          pubDate: el.querySelector('pubDate')?.textContent?.trim() || '',
+          source: el.querySelector('source')?.textContent?.trim() || feedLabel,
+        })).filter(x => !!x.title);
+      }
+
+      const atomEntries = Array.from(doc.querySelectorAll('entry'));
+      return atomEntries.map(el => ({
+        title: el.querySelector('title')?.textContent?.trim() || '',
+        url: el.querySelector('link')?.getAttribute('href') || el.querySelector('link')?.textContent?.trim() || '',
+        pubDate: el.querySelector('updated')?.textContent?.trim() || el.querySelector('published')?.textContent?.trim() || '',
+        source: doc.querySelector('feed > title')?.textContent?.trim() || feedLabel,
+      })).filter(x => !!x.title);
+    } catch {
+      return [];
+    }
+  }, []);
+
+  // Live fetch at runtime (preview/export) + keep last fetch snapshot in JSON when editable.
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!block.refreshOnView) return;
+      const urls = (block.feedUrls || []).filter(Boolean);
+      if (!urls.length) return;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+
+      const all: { title: string; url: string; source: string; pubDate: string }[] = [];
+      for (const url of urls) {
+        try {
+          const res = await fetch(PROXY + encodeURIComponent(url), { cache: 'no-store' });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const xml = (data && typeof data.contents === 'string') ? data.contents : '';
+          all.push(...parseXml(xml, url));
+        } catch {
+          // ignore per-feed errors
+        }
+      }
+
+      // Deduplicate by URL
+      const seen = new Set<string>();
+      const deduped = all.filter(it => {
+        if (!it.url || seen.has(it.url)) return false;
+        seen.add(it.url);
+        return true;
+      });
+
+      // Sort by date desc
+      deduped.sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
+
+      const now = new Date().toISOString();
+      if (cancelled) return;
+
+      setLiveItems(deduped);
+      setLiveFetched(now);
+
+      // Persist snapshot when editable (builder) so exports can render the last fetch if offline.
+      if (editable) {
+        onUpdateBlock({ items: deduped, lastFetched: now });
+      }
+    }
+    run();
+    return () => { cancelled = true; };
+  }, [editable, onUpdateBlock, block.refreshOnView, (block.feedUrls || []).join('|'), parseXml]);
+
+  const itemsToShow = (liveItems && liveItems.length) ? liveItems : (block.items || []);
+  const fetchedToShow = liveFetched || block.lastFetched;
+
   return (
     <div style={{ padding: '24px 40px' }}>
       <div style={{ border: `1px solid ${theme.border}`, borderRadius: 12, overflow: 'hidden', background: theme.surface }}>
@@ -1126,16 +1209,16 @@ export function RssSidebarBlock({ block, theme }: { block: RssSidebarBlockType; 
         <div style={{ background: theme.primary, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 14 }}>📰</span>
           <span style={{ fontFamily: theme.fontMono, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.9)' }}>{block.heading}</span>
-          {block.lastFetched && <span style={{ marginLeft: 'auto', fontFamily: theme.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>Updated {new Date(block.lastFetched).toLocaleDateString()}</span>}
+          {fetchedToShow && <span style={{ marginLeft: 'auto', fontFamily: theme.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>Updated {new Date(fetchedToShow).toLocaleDateString()}</span>}
         </div>
         {/* Items */}
         <div className="nap-rss-scroll" style={{ maxHeight: block.enableScroll ? 420 : 'none', overflowY: block.enableScroll ? 'auto' as any : 'visible' as any }}>
-          {(block.items || []).length === 0 ? (
+          {(itemsToShow || []).length === 0 ? (
             <div style={{ padding: '24px 18px', textAlign: 'center', color: theme.muted, fontFamily: theme.fontBody, fontSize: 13 }}>
               No feed items yet — configure feeds in Block Settings and refresh.
             </div>
           ) : (
-            (block.items || []).slice(0, block.maxItems || 8).map((item, i) => (
+            (itemsToShow || []).slice(0, block.maxItems || 8).map((item, i) => (
               <div key={i} style={{ padding: '11px 18px', borderBottom: `1px solid ${theme.border}`, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.accent, flexShrink: 0, minWidth: 20, marginTop: 1 }}>
                   {String(i + 1).padStart(2, '0')}
