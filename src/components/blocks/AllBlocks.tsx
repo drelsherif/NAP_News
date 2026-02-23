@@ -1118,7 +1118,9 @@ export function NorthwellSpotlightBlock({ block, theme }: { block: NorthwellSpot
 }
 
 // ─── RSS Sidebar Panel ────────────────────────────────────────────────────────
-export function RssSidebarBlock({ block, theme, editable, onUpdateBlock }: { block: RssSidebarBlockType; theme: T; editable?: boolean; newsletter: any; onUpdateBlock: (c: Partial<RssSidebarBlockType>) => void }) {
+export function RssSidebarBlock(
+  { block, theme, editable, onUpdateBlock }: { block: RssSidebarBlockType; theme: T; editable?: boolean; newsletter: any; onUpdateBlock: (c: Partial<RssSidebarBlockType>) => void }
+) {
   const PROXY = 'https://api.allorigins.win/get?url=';
   const [liveItems, setLiveItems] = useState(block.items || []);
   const [liveFetched, setLiveFetched] = useState(block.lastFetched || '');
@@ -1131,21 +1133,25 @@ export function RssSidebarBlock({ block, theme, editable, onUpdateBlock }: { blo
 
       const rssItems = Array.from(doc.querySelectorAll('item'));
       if (rssItems.length) {
-        return rssItems.map(el => ({
-          title: el.querySelector('title')?.textContent?.trim() || '',
-          url: el.querySelector('link')?.textContent?.trim() || '',
-          pubDate: el.querySelector('pubDate')?.textContent?.trim() || '',
-          source: el.querySelector('source')?.textContent?.trim() || feedLabel,
-        })).filter(x => !!x.title);
+        return rssItems
+          .map(el => ({
+            title: el.querySelector('title')?.textContent?.trim() || '',
+            url: el.querySelector('link')?.textContent?.trim() || '',
+            pubDate: el.querySelector('pubDate')?.textContent?.trim() || '',
+            source: el.querySelector('source')?.textContent?.trim() || feedLabel,
+          }))
+          .filter(x => !!x.title);
       }
 
       const atomEntries = Array.from(doc.querySelectorAll('entry'));
-      return atomEntries.map(el => ({
-        title: el.querySelector('title')?.textContent?.trim() || '',
-        url: el.querySelector('link')?.getAttribute('href') || el.querySelector('link')?.textContent?.trim() || '',
-        pubDate: el.querySelector('updated')?.textContent?.trim() || el.querySelector('published')?.textContent?.trim() || '',
-        source: doc.querySelector('feed > title')?.textContent?.trim() || feedLabel,
-      })).filter(x => !!x.title);
+      return atomEntries
+        .map(el => ({
+          title: el.querySelector('title')?.textContent?.trim() || '',
+          url: el.querySelector('link')?.getAttribute('href') || el.querySelector('link')?.textContent?.trim() || '',
+          pubDate: el.querySelector('updated')?.textContent?.trim() || el.querySelector('published')?.textContent?.trim() || '',
+          source: doc.querySelector('feed > title')?.textContent?.trim() || feedLabel,
+        }))
+        .filter(x => !!x.title);
     } catch {
       return [];
     }
@@ -1154,6 +1160,7 @@ export function RssSidebarBlock({ block, theme, editable, onUpdateBlock }: { blo
   // Live fetch at runtime (preview/export) + keep last fetch snapshot in JSON when editable.
   useEffect(() => {
     let cancelled = false;
+
     async function run() {
       if (!block.refreshOnView) return;
       const urls = (block.feedUrls || []).filter(Boolean);
@@ -1166,7 +1173,7 @@ export function RssSidebarBlock({ block, theme, editable, onUpdateBlock }: { blo
           const res = await fetch(PROXY + encodeURIComponent(url), { cache: 'no-store' });
           if (!res.ok) continue;
           const data = await res.json();
-          const xml = (data && typeof data.contents === 'string') ? data.contents : '';
+          const xml = data && typeof data.contents === 'string' ? data.contents : '';
           all.push(...parseXml(xml, url));
         } catch {
           // ignore per-feed errors
@@ -1195,53 +1202,77 @@ export function RssSidebarBlock({ block, theme, editable, onUpdateBlock }: { blo
         onUpdateBlock({ items: deduped, lastFetched: now });
       }
     }
-    run();
-    return () => { cancelled = true; };
-  }, [editable, onUpdateBlock, block.refreshOnView, (block.feedUrls || []).join('|'), parseXml]);
 
-  const itemsToShow = (liveItems && liveItems.length) ? liveItems : (block.items || []);
-  const fetchedToShow = liveFetched || block.lastFetched;
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [PROXY, block.feedUrls, block.refreshOnView, editable, onUpdateBlock, parseXml]);
+
+  const itemsToShow = block.refreshOnView ? liveItems : (block.items || []);
+  const fetchedToShow = block.refreshOnView ? liveFetched : (block.lastFetched || '');
 
   return (
-    <div style={{ padding: '24px 40px' }}>
-      <div style={{ border: `1px solid ${theme.border}`, borderRadius: 12, overflow: 'hidden', background: theme.surface }}>
-        {/* Header */}
-        <div style={{ background: theme.primary, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 14 }}>📰</span>
-          <span style={{ fontFamily: theme.fontMono, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.9)' }}>{block.heading}</span>
-          {fetchedToShow && <span style={{ marginLeft: 'auto', fontFamily: theme.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>Updated {new Date(fetchedToShow).toLocaleDateString()}</span>}
-        </div>
-        {/* Items */}
-        <div className="nap-rss-scroll" style={{ maxHeight: block.enableScroll ? 420 : 'none', overflowY: block.enableScroll ? 'auto' as any : 'visible' as any }}>
-          {(itemsToShow || []).length === 0 ? (
-            <div style={{ padding: '24px 18px', textAlign: 'center', color: theme.muted, fontFamily: theme.fontBody, fontSize: 13 }}>
-              No feed items yet — configure feeds in Block Settings and refresh.
-            </div>
-          ) : (
-            (itemsToShow || []).slice(0, block.maxItems || 8).map((item, i) => (
-              <div key={i} style={{ padding: '11px 18px', borderBottom: `1px solid ${theme.border}`, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.accent, flexShrink: 0, minWidth: 20, marginTop: 1 }}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: theme.fontBody, fontSize: 13, fontWeight: 600, color: theme.text, lineHeight: 1.3, marginBottom: 3 }}>
-                    {item.url ? (
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.text, textDecoration: 'none' }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = theme.accent}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = theme.text}>
-                        {item.title}
-                      </a>
-                    ) : item.title}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    {item.source && <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.source}</span>}
-                    {item.pubDate && <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.muted }}>{new Date(item.pubDate).toLocaleDateString()}</span>}
-                  </div>
-                </div>
-                {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, fontFamily: theme.fontBody, fontSize: 11, color: theme.accent, fontWeight: 600, textDecoration: 'none', paddingTop: 1 }}>↗</a>}
+    <div className="nap-rss-sidebar" style={{ padding: '24px 40px' }}>
+      {/* Native RSS render (hidden when RSS Live Feed v6 is enabled in index.html) */}
+      <div className="nap-rss-config">
+        <div style={{ border: `1px solid ${theme.border}`, borderRadius: 12, overflow: 'hidden', background: theme.surface }}>
+          {/* Header */}
+          <div style={{ background: theme.primary, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14 }}>📰</span>
+            <span style={{ fontFamily: theme.fontMono, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.9)' }}>
+              {block.heading}
+            </span>
+            {fetchedToShow && (
+              <span style={{ marginLeft: 'auto', fontFamily: theme.fontMono, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>
+                Updated {new Date(fetchedToShow).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+
+          {/* Items */}
+          <div className="nap-rss-scroll" style={{ maxHeight: block.enableScroll ? 420 : 'none', overflowY: block.enableScroll ? ('auto' as any) : ('visible' as any) }}>
+            {(itemsToShow || []).length === 0 ? (
+              <div style={{ padding: '24px 18px', textAlign: 'center', color: theme.muted, fontFamily: theme.fontBody, fontSize: 13 }}>
+                No feed items yet — configure feeds in Block Settings and refresh.
               </div>
-            ))
-          )}
+            ) : (
+              (itemsToShow || []).slice(0, block.maxItems || 8).map((item, i) => (
+                <div key={i} style={{ padding: '11px 18px', borderBottom: `1px solid ${theme.border}`, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.accent, flexShrink: 0, minWidth: 20, marginTop: 1 }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: theme.fontBody, fontSize: 13, fontWeight: 600, color: theme.text, lineHeight: 1.3, marginBottom: 3 }}>
+                      {item.url ? (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: theme.text, textDecoration: 'none' }}
+                          onMouseEnter={e => (((e.currentTarget as HTMLElement).style.color = theme.accent))}
+                          onMouseLeave={e => (((e.currentTarget as HTMLElement).style.color = theme.text))}
+                        >
+                          {item.title}
+                        </a>
+                      ) : (
+                        item.title
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {item.source && <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.source}</span>}
+                      {item.pubDate && <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.muted }}>{new Date(item.pubDate).toLocaleDateString()}</span>}
+                    </div>
+                  </div>
+                  {item.url && (
+                    <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, fontFamily: theme.fontBody, fontSize: 11, color: theme.accent, fontWeight: 600, textDecoration: 'none', paddingTop: 1 }}>
+                      ↗
+                    </a>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1249,7 +1280,7 @@ export function RssSidebarBlock({ block, theme, editable, onUpdateBlock }: { blo
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
-export function FooterBlock({ block, theme }: { block: FooterBlockType; theme: T; newsletter: any; onUpdateBlock: any }) {
+export function FooterBlock({ block, theme }: { block: FooterBlockType; theme: T }) {
   const contactHref = `mailto:yelsherif@northwell.edu?subject=${encodeURIComponent('Neurology AI Pulse Newsletter Suggestions/Comments')}`;
 
   return (

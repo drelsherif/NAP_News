@@ -4,7 +4,7 @@
     "title": "Neurology AI Pulse — Issue 001",
     "issueNumber": "001",
     "createdAt": "2026-02-21T12:28:07.292Z",
-    "updatedAt": "2026-02-23T09:58:55.767Z"
+    "updatedAt": "2026-02-23T14:05:13.355Z"
   },
   "theme": {
     "id": "northwell",
@@ -43,7 +43,7 @@
     "c8ee40c4-980f-475c-864c-2368decd4cb2",
     "23a8a2b8-c401-4e8d-9392-07499c4f1818",
     "76e2ae25-b421-4aa2-ab29-2da592adf080",
-    "dba7e0ca-0e96-4fef-ad2a-ee4fd8cdd0fe",
+    "b9c594c6-ceb3-4f15-9642-9ac061ba1f3a",
     "bdff084d-8247-4a6b-a889-4157113270e5",
     "84f91019-8baa-48b9-9e4e-0fa6c9f36bc4",
     "477a9d59-8fa8-4221-852e-8318cc062d97",
@@ -297,7 +297,9 @@
         "https://www.thelancet.com/rssfeed/laneur_current.xml",
         "https://www.nature.com/npjdigitalmed.rss",
         "https://jamanetwork.com/rss/site_16/onlineFirst_72.xml",
-        "https://pn.bmj.com/rss/current.xml"
+        "https://pn.bmj.com/rss/current.xml",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1x9bY_ZPGMIgWOrGWvQbkjt2X1J5zCH66gaj5UHwPTuOP_TklI/?limit=15&utm_campaign=pubmed-2&fc=20260222062849",
+        "https://www.frontiersin.org/journals/neuroscience/rss"
       ],
       "items": [
         {
@@ -355,74 +357,14 @@
           "pubDate": "Mon, 09 Feb 2026 00:00:00 GMT"
         },
         {
-          "title": "Correlation between blood pressure variability and prognosis of endovascular therapy in ischemic stroke due to middle cerebral artery occlusion",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1723520",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "Intra-individual structural covariance network in patients with chronic neck and shoulder pain: a longitudinal brain structure analysis",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1732732",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "Multimodal MRI Assessment of neuroprotective effects of Ofatumumab on brain structure, function, and clinical correlates in Relapsing Multiple Sclerosis",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1738469",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "Obituary: Paul Smith (1960–2025)",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1790952",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "Deep learning and high-resolution magnetic resonance vascular wall imaging: current challenges and future perspectives",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1731783",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "Implications and prospects of immunological and neuroimaging research in HIV-associated neurocognitive disorders",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1699610",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "Impact of hospital-acquired pneumonia on rehabilitation outcomes and mortality in patients after severe acquired brain injury: a retrospective cohort study",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1663431",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "Preliminary comparison of efficacy and safety between direct bypass surgery and endovascular recanalization therapy in adult ischemic moyamoya disease",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1689206",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "Construction and validation of a prognostic model for clinical outcomes in patients with prolonged disorders of consciousness based on multidimensional indicators: a prospective cohort study",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1738430",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
-          "title": "An Australian brain bank and the future of alcohol and major neuropsychiatric disorders research",
-          "url": "https://www.frontiersin.org/articles/10.3389/fneur.2026.1746346",
-          "source": "Frontiers in Neurology | New and Recent Articles",
-          "pubDate": ""
-        },
-        {
           "title": "Editors' commentary",
           "url": "http://pn.bmj.com/cgi/content/short/26/1/1?rss=1",
           "source": "Practical Neurology current issue",
           "pubDate": ""
         }
       ],
-      "maxItems": 20,
-      "lastFetched": "2026-02-22T12:31:15.487Z",
+      "maxItems": 10,
+      "lastFetched": "2026-02-23T11:12:18.774Z",
       "position": "inline",
       "refreshOnView": false
     },
@@ -477,7 +419,7 @@
       "id": "f5a52c8b-e417-4036-9b83-523805bb52c6",
       "type": "html-embed",
       "html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>The Neurology AI Pulse - Welcome</title>\n    <style>\n        body, html {\n            margin: 0;\n            padding: 0;\n            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;\n            color: #1a1a1a; /* Darker, high-contrast text */\n            background-color: #0d1117;\n            overflow-x: hidden;\n        }\n\n        /* Animated Neural Background */\n        .bg-container {\n            position: fixed;\n            top: 0;\n            left: 0;\n            width: 100%;\n            height: 100%;\n            z-index: -1;\n            background: radial-gradient(circle at 30% 30%, #1a2a44 0%, #0d1117 100%);\n        }\n\n        .node {\n            position: absolute;\n            background: rgba(0, 150, 255, 0.1);\n            border-radius: 50%;\n            filter: blur(10px);\n            animation: drift 25s infinite ease-in-out;\n        }\n\n        @keyframes drift {\n            0%, 100% { transform: translate(0, 0) scale(1); }\n            50% { transform: translate(30px, -40px) scale(1.1); }\n        }\n\n        /* Wide and Compact Introduction Card */\n        .intro-card {\n            max-width: 1150px; \n            margin: 30px auto;\n            padding: 25px 45px;\n            background: rgba(255, 255, 255, 0.85); /* Light background for black text visibility */\n            backdrop-filter: blur(15px);\n            border-radius: 8px;\n            border: 1px solid rgba(0, 0, 0, 0.1);\n            box-shadow: 0 10px 30px rgba(0,0,0,0.3);\n        }\n\n        .kicker {\n            color: #005a8d;\n            font-weight: bold;\n            text-transform: uppercase;\n            letter-spacing: 1.5px;\n            font-size: 8.5pt;\n            margin-bottom: 6px;\n            display: block;\n        }\n\n        h1 {\n            font-size: 1.6em;\n            margin: 0 0 12px 0;\n            color: #000000;\n            font-weight: 700;\n        }\n\n        p {\n            line-height: 1.5;\n            font-size: 10pt; /* Small, professional font size */\n            margin-bottom: 12px;\n            text-align: justify;\n        }\n\n        .signature {\n            margin-top: 20px;\n            padding-top: 12px;\n            border-top: 1px solid rgba(0,0,0,0.1);\n            font-size: 9.5pt;\n            color: #333333;\n        }\n\n        a.profile-link {\n            color: #0077b6;\n            text-decoration: none;\n            font-weight: 600;\n        }\n\n        a.profile-link:hover {\n            text-decoration: underline;\n        }\n\n        .role {\n            font-style: italic;\n            color: #555555;\n            font-weight: normal;\n        }\n\n        .highlight {\n            color: #000000;\n            font-weight: 600;\n        }\n    </style>\n</head>\n<body>\n\n    <div class=\"bg-container\">\n        <div class=\"node\" style=\"width: 400px; height: 400px; top: -5%; left: 0%;\"></div>\n        <div class=\"node\" style=\"width: 300px; height: 300px; bottom: 5%; right: 5%; animation-delay: -10s;\"></div>\n    </div>\n\n    <div class=\"intro-card\">\n        <span class=\"kicker\">Edition No. 2 | March 2026</span>\n        <h1>Mission & Welcome</h1>\n        \n        <p>As we continue to navigate the rapid evolution of AI in medicine, we created <span class=\"highlight\">The Neurology AI Pulse</span> to provide a direct bridge between technical innovation and clinical practice. Our mission is to translate high-dimensional data and complex algorithms into actionable insights for the SIUH community and the broader neuroscientific field. Whether you are integrating these tools into your daily workflow or evaluating them from a distance, this newsletter is designed to keep you informed, critical, and prepared. From the latest in stroke triage to the ethics of generative models, we explore the intersection of machine learning and human neurology together.</p>\n\n        <div class=\"signature\">\n            — \n            <a href=\"https://www.northwell.edu/find-care/find-a-doctor/dr-yasir-el-sherif-md-1346402914\" class=\"profile-link\">Yasir El-Sherif, MD, PhD</a> \n            <span class=\"role\">(Practicing Neurologist)</span> \n            & \n            <a href=\"https://linkedin.com/in/jaishahani\" class=\"profile-link\">Jai Shahani, MD</a> \n            <span class=\"role\">(Neurologist in Training)</span>\n        </div>\n    </div>\n\n</body>\n</html>",
-      "label": "Custom HTML"
+      "label": ""
     },
     "2ffa53d2-f0fa-4e45-bfb7-822c1990247d": {
       "id": "2ffa53d2-f0fa-4e45-bfb7-822c1990247d",
@@ -561,14 +503,6 @@
       "number": 0,
       "description": ""
     },
-    "dba7e0ca-0e96-4fef-ad2a-ee4fd8cdd0fe": {
-      "id": "dba7e0ca-0e96-4fef-ad2a-ee4fd8cdd0fe",
-      "type": "section-divider",
-      "label": "RSS Feeds - Neurology, Medicine and AI",
-      "style": "gradient",
-      "number": 0,
-      "description": ""
-    },
     "5016659e-5ea5-4467-93c4-3f34ecc8049e": {
       "id": "5016659e-5ea5-4467-93c4-3f34ecc8049e",
       "type": "spacer",
@@ -589,6 +523,22 @@
       "height": 32,
       "showLine": true,
       "lineStyle": "solid"
+    },
+    "b9c594c6-ceb3-4f15-9642-9ac061ba1f3a": {
+      "id": "b9c594c6-ceb3-4f15-9642-9ac061ba1f3a",
+      "type": "rss-sidebar",
+      "heading": "In the Feed This Week",
+      "feedUrls": [
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1/?term=neurology+artificial+intelligence&sort=date",
+        "https://pn.bmj.com/rss/current.xml",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1x9bY_ZPGMIgWOrGWvQbkjt2X1J5zCH66gaj5UHwPTuOP_TklI/?limit=15&utm_campaign=pubmed-2&fc=20260222062849"
+      ],
+      "items": [],
+      "maxItems": 15,
+      "lastFetched": "",
+      "position": "inline",
+      "refreshOnView": false,
+      "enableScroll": false
     }
   }
 }

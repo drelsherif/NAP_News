@@ -4,7 +4,7 @@
     "title": "Neurology AI Pulse — Issue 001",
     "issueNumber": "001",
     "createdAt": "2026-02-21T12:28:07.292Z",
-    "updatedAt": "2026-02-23T11:12:18.776Z"
+    "updatedAt": "2026-02-23T14:10:14.245Z"
   },
   "theme": {
     "id": "northwell",
@@ -43,8 +43,7 @@
     "c8ee40c4-980f-475c-864c-2368decd4cb2",
     "23a8a2b8-c401-4e8d-9392-07499c4f1818",
     "76e2ae25-b421-4aa2-ab29-2da592adf080",
-    "dba7e0ca-0e96-4fef-ad2a-ee4fd8cdd0fe",
-    "bdff084d-8247-4a6b-a889-4157113270e5",
+    "b9c594c6-ceb3-4f15-9642-9ac061ba1f3a",
     "84f91019-8baa-48b9-9e4e-0fa6c9f36bc4",
     "477a9d59-8fa8-4221-852e-8318cc062d97",
     "96bd52c9-6514-42ec-90c1-c4f7778ab82a"
@@ -288,86 +287,6 @@
         }
       ]
     },
-    "bdff084d-8247-4a6b-a889-4157113270e5": {
-      "id": "bdff084d-8247-4a6b-a889-4157113270e5",
-      "type": "rss-sidebar",
-      "heading": "In the Feed This Week",
-      "feedUrls": [
-        "https://www.frontiersin.org/journals/neurology/rss",
-        "https://www.thelancet.com/rssfeed/laneur_current.xml",
-        "https://www.nature.com/npjdigitalmed.rss",
-        "https://jamanetwork.com/rss/site_16/onlineFirst_72.xml",
-        "https://pn.bmj.com/rss/current.xml",
-        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1x9bY_ZPGMIgWOrGWvQbkjt2X1J5zCH66gaj5UHwPTuOP_TklI/?limit=15&utm_campaign=pubmed-2&fc=20260222062849",
-        "https://www.frontiersin.org/journals/neuroscience/rss"
-      ],
-      "items": [
-        {
-          "title": "Association Between GLP-1 RAs and Idiopathic Intracranial Hypertension",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2845195",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 16 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Association Between GLP-1 RAs and Idiopathic Intracranial Hypertension—Reply",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2845194",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 16 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Long-Term Outcomes and Recovery Trajectories in Out-of-Hospital Cardiac Arrest",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2845193",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 16 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Sex Differences in P-Tau217, Tau Aggregation, and Cognitive Decline",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2845192",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 16 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Five Years of Ublituximab in Multiple Sclerosis",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2845191",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 16 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Beyond Autoimmune Encephalitis—Insights and Cross-Disciplinary Lessons",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2845190",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 16 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Error in the Funding/Support Statement",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2844931",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 09 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Brivaracetam, Cenobamate, Lacosamide, and Perampanel in Focal Epilepsy",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2844930",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 09 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Glucocorticoids for Preventing Migraine Recurrence in the ED",
-          "url": "https://jamanetwork.com/journals/jamaneurology/fullarticle/2844929",
-          "source": "JAMA Neurology Online First",
-          "pubDate": "Mon, 09 Feb 2026 00:00:00 GMT"
-        },
-        {
-          "title": "Editors' commentary",
-          "url": "http://pn.bmj.com/cgi/content/short/26/1/1?rss=1",
-          "source": "Practical Neurology current issue",
-          "pubDate": ""
-        }
-      ],
-      "maxItems": 10,
-      "lastFetched": "2026-02-23T11:12:18.774Z",
-      "position": "inline",
-      "refreshOnView": false
-    },
     "84f91019-8baa-48b9-9e4e-0fa6c9f36bc4": {
       "id": "84f91019-8baa-48b9-9e4e-0fa6c9f36bc4",
       "type": "humor",
@@ -503,14 +422,6 @@
       "number": 0,
       "description": ""
     },
-    "dba7e0ca-0e96-4fef-ad2a-ee4fd8cdd0fe": {
-      "id": "dba7e0ca-0e96-4fef-ad2a-ee4fd8cdd0fe",
-      "type": "section-divider",
-      "label": "RSS Feeds - Neurology, Medicine and AI",
-      "style": "gradient",
-      "number": 0,
-      "description": ""
-    },
     "5016659e-5ea5-4467-93c4-3f34ecc8049e": {
       "id": "5016659e-5ea5-4467-93c4-3f34ecc8049e",
       "type": "spacer",
@@ -531,6 +442,22 @@
       "height": 32,
       "showLine": true,
       "lineStyle": "solid"
+    },
+    "b9c594c6-ceb3-4f15-9642-9ac061ba1f3a": {
+      "id": "b9c594c6-ceb3-4f15-9642-9ac061ba1f3a",
+      "type": "rss-sidebar",
+      "heading": "In the Feed This Week",
+      "feedUrls": [
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1/?term=neurology+artificial+intelligence&sort=date",
+        "https://pn.bmj.com/rss/current.xml",
+        "https://pubmed.ncbi.nlm.nih.gov/rss/search/1x9bY_ZPGMIgWOrGWvQbkjt2X1J5zCH66gaj5UHwPTuOP_TklI/?limit=15&utm_campaign=pubmed-2&fc=20260222062849"
+      ],
+      "items": [],
+      "maxItems": 15,
+      "lastFetched": "2026-02-23T14:05:29.193Z",
+      "position": "inline",
+      "refreshOnView": false,
+      "enableScroll": false
     }
   }
 }
