@@ -19,6 +19,21 @@ function isPreviewRoute(): boolean {
   return (window.location.hash || '').startsWith('#/preview');
 }
 
+function useBreakpoint() {
+  const getBreakpoint = () => ({
+    isMobile: window.innerWidth < 768,
+    isTablet: window.innerWidth >= 768 && window.innerWidth < 1024,
+    isDesktop: window.innerWidth >= 1024,
+  });
+  const [bp, setBp] = useState(getBreakpoint);
+  useEffect(() => {
+    const handler = () => setBp(getBreakpoint());
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return bp;
+}
+
 export default function App() {
   const {
     newsletter, load, addBlock, deleteBlock, updateBlock, moveBlock, duplicateBlock,
@@ -30,9 +45,13 @@ export default function App() {
   const { autosave, loadAutosave, saveVersion, deleteVersion, versions, exportJSON, importJSON } = useStorage();
 
   const rss = useRss();
+  const { isMobile, isTablet } = useBreakpoint();
 
   const [previewDoc, setPreviewDoc] = useState<Newsletter | null>(null);
   const [routePreview, setRoutePreview] = useState<boolean>(isPreviewRoute());
+
+  // Drawer open state (tablet slide-out, mobile bottom-sheet)
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [editorState, setEditorState] = useState<EditorState>({
     selectedBlockId: null,
@@ -46,37 +65,35 @@ export default function App() {
   // Apply theme on change
   useEffect(() => { applyTheme(newsletter.theme); }, [newsletter.theme]);
 
-  // Hash-route listener (portable exports use hash routing)
+  // Close drawer when switching to desktop
+  useEffect(() => {
+    if (!isMobile && !isTablet) setDrawerOpen(false);
+  }, [isMobile, isTablet]);
+
+  // Hash-route listener
   useEffect(() => {
     const onHash = () => setRoutePreview(isPreviewRoute());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // Preview mode: load newsletter from embedded JSON or ./newsletter.json
+  // Preview mode
   useEffect(() => {
     if (!routePreview) return;
-
-    // 1) Embedded data (single-file export)
     if (window.__NAP_NEWSLETTER__) {
       setPreviewDoc(window.__NAP_NEWSLETTER__);
       load(window.__NAP_NEWSLETTER__);
       return;
     }
-
-    // 2) Hosted web-zip (newsletter.json beside index.html)
     fetch('./newsletter.json', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then((json: Newsletter) => {
-        setPreviewDoc(json);
-        load(json);
-      })
+      .then((json: Newsletter) => { setPreviewDoc(json); load(json); })
       .catch(() => setPreviewDoc(null));
   }, [routePreview, load]);
 
   // Load autosave on mount
   useEffect(() => {
-    if (routePreview) return; // never load autosave in preview/production mode
+    if (routePreview) return;
     const saved = loadAutosave();
     if (saved) { load(saved); setLastSaved('Loaded autosave'); }
   }, []); // eslint-disable-line
@@ -114,11 +131,20 @@ export default function App() {
     }
   }, [importJSON, load, showToast]);
 
-  const setPanel = useCallback((panel: SidebarPanel) =>
-    setEditorState(s => ({ ...s, activePanel: panel })), []);
+  const setPanel = useCallback((panel: SidebarPanel) => {
+    setEditorState(s => ({ ...s, activePanel: panel }));
+    // On mobile/tablet, opening a panel also opens the drawer
+    if (isMobile || isTablet) setDrawerOpen(true);
+  }, [isMobile, isTablet]);
 
-  const selectBlock = useCallback((id: string | null) =>
-    setEditorState(s => ({ ...s, selectedBlockId: id })), []);
+  const selectBlock = useCallback((id: string | null) => {
+    setEditorState(s => ({ ...s, selectedBlockId: id }));
+    // When a block is selected on mobile, open settings in drawer
+    if (id && (isMobile || isTablet)) {
+      setEditorState(s => ({ ...s, selectedBlockId: id, activePanel: 'blocks' }));
+      setDrawerOpen(true);
+    }
+  }, [isMobile, isTablet]);
 
   const togglePreview = useCallback(() =>
     setEditorState(s => ({ ...s, previewMode: !s.previewMode, selectedBlockId: null })), []);
@@ -128,7 +154,7 @@ export default function App() {
 
   const effectivePreviewMode = routePreview || editorState.previewMode;
 
-  // Route preview mode renders the same Canvas with editor controls disabled.
+  // Route preview mode
   if (routePreview) {
     if (!previewDoc) {
       return (
@@ -138,26 +164,50 @@ export default function App() {
         </div>
       );
     }
-
     return (
       <div style={{ height: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)', overflow: 'auto' }}>
         <Canvas
           newsletter={newsletter}
           editorState={{ ...editorState, previewMode: true, selectedBlockId: null, zoom: 100 }}
-          onSelectBlock={() => { /* disabled */ }}
-          onMoveBlock={() => { /* disabled */ }}
-          onDeleteBlock={() => { /* disabled */ }}
-          onDuplicateBlock={() => { /* disabled */ }}
-          onAddBlock={() => { /* disabled */ }}
-          onUpdateBlock={() => { /* disabled */ }}
-          onUpdateArticle={() => { /* disabled */ }}
-          onDeleteArticle={() => { /* disabled */ }}
-          onMoveArticle={() => { /* disabled */ }}
-          onAddArticle={() => { /* disabled */ }}
+          isMobile={isMobile}
+          onSelectBlock={() => {}}
+          onMoveBlock={() => {}}
+          onDeleteBlock={() => {}}
+          onDuplicateBlock={() => {}}
+          onAddBlock={() => {}}
+          onUpdateBlock={() => {}}
+          onUpdateArticle={() => {}}
+          onDeleteArticle={() => {}}
+          onMoveArticle={() => {}}
+          onAddArticle={() => {}}
         />
       </div>
     );
   }
+
+  const sidebarProps = {
+    newsletter,
+    editorState,
+    rss,
+    versions,
+    isMobile,
+    isTablet,
+    drawerOpen,
+    onCloseDrawer: () => setDrawerOpen(false),
+    onSetPanel: setPanel,
+    onAddBlock: addBlock,
+    onSelectBlock: selectBlock,
+    onUpdateBlock: updateBlock,
+    onUpdateTheme: updateTheme,
+    onRestoreVersion: (v: any) => { load(v.newsletter); showToast('Version restored'); },
+    onDeleteVersion: deleteVersion,
+    onAddArticle: addArticle,
+    onUpdateArticle: updateArticle,
+    onDeleteArticle: deleteArticle,
+    onAddQuickHit: addQuickHit,
+    onUpdateQuickHit: updateQuickHit,
+    onDeleteQuickHit: deleteQuickHit,
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)', overflow: 'hidden' }}>
@@ -165,6 +215,10 @@ export default function App() {
         newsletter={newsletter}
         editorState={editorState}
         lastSaved={lastSaved}
+        isMobile={isMobile}
+        isTablet={isTablet}
+        drawerOpen={drawerOpen}
+        onToggleDrawer={() => setDrawerOpen(o => !o)}
         onSave={handleSave}
         onSaveVersion={handleSaveVersion}
         onExportJson={() => exportJSON(newsletter)}
@@ -174,32 +228,17 @@ export default function App() {
         onUpdateMeta={updateMeta}
       />
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {/* Desktop: sidebar always visible inline */}
+        {/* Tablet/Mobile: sidebar as drawer, rendered at portal level */}
         {!effectivePreviewMode && (
-          <Sidebar
-            newsletter={newsletter}
-            editorState={editorState}
-            rss={rss}
-            versions={versions}
-            onSetPanel={setPanel}
-            onAddBlock={addBlock}
-            onSelectBlock={selectBlock}
-            onUpdateBlock={updateBlock}
-            onUpdateTheme={updateTheme}
-            onRestoreVersion={(v) => { load(v.newsletter); showToast('Version restored'); }}
-            onDeleteVersion={deleteVersion}
-            onAddArticle={addArticle}
-            onUpdateArticle={updateArticle}
-            onDeleteArticle={deleteArticle}
-            onAddQuickHit={addQuickHit}
-            onUpdateQuickHit={updateQuickHit}
-            onDeleteQuickHit={deleteQuickHit}
-          />
+          <Sidebar {...sidebarProps} />
         )}
 
         <Canvas
           newsletter={newsletter}
           editorState={{ ...editorState, previewMode: effectivePreviewMode }}
+          isMobile={isMobile}
           onSelectBlock={selectBlock}
           onMoveBlock={moveBlock}
           onDeleteBlock={deleteBlock}
@@ -211,12 +250,17 @@ export default function App() {
           onMoveArticle={moveArticle}
           onAddArticle={addArticle}
         />
+
+        {/* Tablet/mobile drawer scrim */}
+        {drawerOpen && (isMobile || isTablet) && (
+          <div className="nap-drawer-scrim" onClick={() => setDrawerOpen(false)} />
+        )}
       </div>
 
       {/* Toast */}
       {toast && (
         <div style={{
-          position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+          position: 'fixed', bottom: isMobile ? 72 : 24, right: 24, zIndex: 9999,
           background: 'var(--color-primary)', color: '#fff',
           padding: '12px 20px', borderRadius: 12,
           fontFamily: 'var(--font-body)', fontSize: 14,

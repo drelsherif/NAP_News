@@ -11,6 +11,9 @@
   --font-display: "DM Serif Display", Georgia, serif;
   --font-body: "DM Sans", system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, monospace;
+  --topbar-height: 56px;
+  --bottomnav-height: 60px;
+  --sidebar-width: 320px;
 }
 
 /* ─── Reset ─────────────────────────────────────────────────────────────────── */
@@ -22,15 +25,16 @@
 
 html, body, #root {
   height: 100%;
-  overflow: hidden;
 }
 
+/* Desktop: overflow hidden keeps the app shell fixed */
 body {
   font-family: var(--font-body);
   color: var(--color-text);
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
@@ -40,11 +44,8 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
 
 /* ─── Typography defaults ───────────────────────────────────────────────────── */
-/* Links default to accent color in the builder */
 a { color: var(--color-accent); }
-/* White sections (header, footer, bold dividers) links inherit white */
 .nap-white-section a { color: inherit; }
-/* Ticker links stay white regardless */
 .nap-ticker a { color: inherit !important; }
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */
@@ -52,15 +53,21 @@ a { color: var(--color-accent); }
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes slideInUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
 /* ─── DnD Kit dragging ──────────────────────────────────────────────────────── */
@@ -76,15 +83,105 @@ a { color: var(--color-accent); }
   border-radius: 4px;
 }
 
+/* Inline editing placeholder */
+[contenteditable][data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: var(--color-muted);
+}
+
 /* ─── Print ─────────────────────────────────────────────────────────────────── */
 @media print {
   header, aside { display: none !important; }
   body { overflow: visible !important; }
 }
 
+/* ─── Tablet drawer (768px – 1023px) ───────────────────────────────────────── */
+@media (max-width: 1023px) {
+  /* Sidebar becomes a slide-over drawer */
+  .nap-sidebar-drawer {
+    position: fixed;
+    top: var(--topbar-height);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.18);
+  }
+  .nap-sidebar-drawer.open {
+    transform: translateX(0);
+  }
+  /* Scrim behind open drawer */
+  .nap-drawer-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(0,0,0,0.35);
+    animation: fadeIn 0.2s ease;
+  }
+}
 
-/* Inline editing helper */
-[contenteditable][data-placeholder]:empty:before {
-  content: attr(data-placeholder);
-  color: var(--color-muted);
+/* ─── Mobile (< 768px) ──────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  body {
+    overflow: hidden;
+  }
+
+  /* Canvas scrolls naturally on mobile */
+  .nap-canvas-scroll {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--bottomnav-height) !important;
+  }
+
+  /* Bottom nav bar */
+  .nap-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottomnav-height);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    z-index: 300;
+    align-items: stretch;
+  }
+
+  /* Panel sheet slides up from bottom */
+  .nap-bottom-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--bottomnav-height);
+    max-height: 70vh;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    border-radius: 16px 16px 0 0;
+    z-index: 250;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    animation: slideInUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+  }
+
+  /* Topbar collapses on mobile — hide zoom, labels only icon */
+  .nap-topbar-zoom { display: none !important; }
+  .nap-topbar-label { display: none !important; }
+
+  /* Wider tap targets on mobile */
+  button { min-height: 36px; }
+}
+
+/* ─── Desktop (≥ 1024px) — scrim and bottom nav never show ─────────────────── */
+@media (min-width: 1024px) {
+  .nap-drawer-scrim { display: none !important; }
+  .nap-bottom-nav { display: none !important; }
+  .nap-bottom-sheet { display: none !important; }
+  .nap-sidebar-drawer {
+    position: static !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }

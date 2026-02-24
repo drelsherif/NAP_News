@@ -16,6 +16,7 @@ import { BLOCK_LABELS } from '../../data/defaults';
 interface Props {
   newsletter: Newsletter;
   editorState: EditorState;
+  isMobile: boolean;
   onSelectBlock: (id: string | null) => void;
   onMoveBlock: (from: number, to: number) => void;
   onDeleteBlock: (id: string) => void;
@@ -28,7 +29,7 @@ interface Props {
   onAddArticle: (blockId: string) => void;
 }
 
-export function Canvas({ newsletter, editorState, onSelectBlock, onMoveBlock, onDeleteBlock, onDuplicateBlock, onAddBlock, onUpdateBlock, onUpdateArticle, onDeleteArticle, onMoveArticle, onAddArticle }: Props) {
+export function Canvas({ newsletter, editorState, isMobile, onSelectBlock, onMoveBlock, onDeleteBlock, onDuplicateBlock, onAddBlock, onUpdateBlock, onUpdateArticle, onDeleteArticle, onMoveArticle, onAddArticle }: Props) {
   const { blockOrder, blocks, theme } = newsletter;
   const { selectedBlockId, previewMode, zoom } = editorState;
 
@@ -45,29 +46,37 @@ export function Canvas({ newsletter, editorState, onSelectBlock, onMoveBlock, on
     if (from !== -1 && to !== -1) onMoveBlock(from, to);
   }, [blockOrder, onMoveBlock]);
 
-  const canvasWidth = 800;
-  const scale = zoom / 100;
+  // On mobile: always 100%, no zoom math
+  const effectiveZoom = isMobile ? 100 : zoom;
+  const canvasWidth = isMobile ? undefined : 800;
+  const scale = effectiveZoom / 100;
 
   return (
-    <div style={{
-      flex: 1, overflow: 'auto',
-      background: 'var(--color-bg)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: previewMode ? '32px 0' : '24px 0 80px',
-    }}>
+    <div
+      className={isMobile ? 'nap-canvas-scroll' : ''}
+      style={{
+        flex: 1, overflow: 'auto',
+        background: 'var(--color-bg)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: isMobile
+          ? (previewMode ? '0 0 70px' : '12px 0 80px')
+          : (previewMode ? '32px 0' : '24px 0 80px'),
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
       <div style={{
-        width: canvasWidth * scale,
+        width: canvasWidth ? canvasWidth * scale : '100%',
         transformOrigin: 'top center',
-        transform: `scale(${scale})`,
-        // When zoomed out, reserve exact vertical space so scroll is correct
+        transform: scale !== 1 ? `scale(${scale})` : undefined,
         marginBottom: scale < 1 ? `calc((${scale} - 1) * 100%)` : 0,
+        maxWidth: isMobile ? '100%' : undefined,
       }}>
         {/* Paper */}
         <div id="nap-paper" style={{
-          width: canvasWidth,
+          width: isMobile ? '100%' : canvasWidth,
           background: theme.surface,
-          boxShadow: previewMode ? 'none' : '0 0 0 1px rgba(0,0,0,0.05), 0 8px 40px rgba(0,0,0,0.12)',
-          borderRadius: previewMode ? 0 : 12,
+          boxShadow: (previewMode || isMobile) ? 'none' : '0 0 0 1px rgba(0,0,0,0.05), 0 8px 40px rgba(0,0,0,0.12)',
+          borderRadius: (previewMode || isMobile) ? 0 : 12,
           overflow: 'hidden',
           minHeight: 400,
         }}>
@@ -85,6 +94,7 @@ export function Canvas({ newsletter, editorState, onSelectBlock, onMoveBlock, on
                     total={blockOrder.length}
                     selected={selectedBlockId === id}
                     previewMode={previewMode}
+                    isMobile={isMobile}
                     theme={newsletter.theme}
                     newsletter={newsletter}
                     onSelect={() => onSelectBlock(selectedBlockId === id ? null : id)}
@@ -126,6 +136,7 @@ interface SortableBlockProps {
   total: number;
   selected: boolean;
   previewMode: boolean;
+  isMobile: boolean;
   theme: Newsletter['theme'];
   newsletter: Newsletter;
   onSelect: () => void;
@@ -141,7 +152,7 @@ interface SortableBlockProps {
   onAddArticle: (blockId: string) => void;
 }
 
-function SortableBlock({ id, block, idx, total, selected, previewMode, theme, newsletter, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, onAddAfter, onUpdateBlock, onUpdateArticle, onDeleteArticle, onMoveArticle, onAddArticle }: SortableBlockProps) {
+function SortableBlock({ id, block, idx, total, selected, previewMode, isMobile, theme, newsletter, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, onAddAfter, onUpdateBlock, onUpdateArticle, onDeleteArticle, onMoveArticle, onAddArticle }: SortableBlockProps) {
   const {
     attributes, listeners, setNodeRef, transform, transition, isDragging,
   } = useSortable({ id });
@@ -191,9 +202,9 @@ function SortableBlock({ id, block, idx, total, selected, previewMode, theme, ne
             onClick={e => e.stopPropagation()}
             style={{
               position: 'absolute', top: 6, right: 6,
-              display: 'flex', alignItems: 'center', gap: 4,
+              display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 4,
               background: 'var(--color-primary)',
-              borderRadius: 8, padding: '4px 6px',
+              borderRadius: 8, padding: isMobile ? '6px 8px' : '4px 6px',
               boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
               zIndex: 10,
             }}
@@ -210,8 +221,8 @@ function SortableBlock({ id, block, idx, total, selected, previewMode, theme, ne
           </div>
         )}
 
-        {/* Drag handle */}
-        {selected && (
+        {/* Drag handle — desktop only */}
+        {selected && !isMobile && (
           <div
             {...attributes}
             {...listeners}

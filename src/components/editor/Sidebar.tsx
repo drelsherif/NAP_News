@@ -8,6 +8,10 @@ import { BlockSettingsPanel } from './BlockSettingsPanel';
 interface Props {
   newsletter: Newsletter;
   editorState: EditorState;
+  isMobile: boolean;
+  isTablet: boolean;
+  drawerOpen: boolean;
+  onCloseDrawer: () => void;
   rss: {
     feeds: RssFeedConfig[]; items: RssItem[]; loading: boolean; errors: string[];
     filter: string; refresh: () => void; setFilter: (f: string) => void;
@@ -30,11 +34,11 @@ interface Props {
 }
 
 const PANELS: { id: EditorState['activePanel']; icon: React.ReactNode; label: string }[] = [
-  { id: 'blocks',   icon: <Layers size={16} />,     label: 'Blocks' },
-  { id: 'settings', icon: <Settings size={16} />,   label: 'Settings' },
-  { id: 'rss',      icon: <Rss size={16} />,        label: 'RSS' },
-  { id: 'theme',    icon: <Palette size={16} />,    label: 'Theme' },
-  { id: 'export',   icon: <Download size={16} />,   label: 'Versions' },
+  { id: 'blocks',   icon: <Layers size={16} />,   label: 'Blocks'   },
+  { id: 'settings', icon: <Settings size={16} />, label: 'Settings' },
+  { id: 'rss',      icon: <Rss size={16} />,      label: 'RSS'      },
+  { id: 'theme',    icon: <Palette size={16} />,  label: 'Theme'    },
+  { id: 'export',   icon: <Download size={16} />, label: 'Versions' },
 ];
 
 const BLOCK_GROUPS: { label: string; types: BlockType[] }[] = [
@@ -45,22 +49,18 @@ const BLOCK_GROUPS: { label: string; types: BlockType[] }[] = [
 ];
 
 export function Sidebar(props: Props) {
-  const { newsletter, editorState, rss, versions, onSetPanel } = props;
+  const { newsletter, editorState, isMobile, isTablet, drawerOpen, onCloseDrawer, rss, versions, onSetPanel } = props;
   const { activePanel, selectedBlockId } = editorState;
   const selectedBlock = selectedBlockId ? newsletter.blocks[selectedBlockId] : null;
+  const isNarrow = isMobile || isTablet;
 
-  return (
-    <div style={{
-      width: 320, flexShrink: 0,
-      display: 'flex', flexDirection: 'column',
-      background: 'var(--color-surface)',
-      borderRight: '1px solid var(--color-border)',
-      overflow: 'hidden',
-    }}>
+  // ── Shared inner content ──────────────────────────────────────────────────
+  const panelBody = (
+    <>
       {/* Panel tabs */}
       <div style={{
         display: 'flex', borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-bg)',
+        background: 'var(--color-bg)', flexShrink: 0,
       }}>
         {PANELS.map(p => (
           <button key={p.id} onClick={() => onSetPanel(p.id)}
@@ -79,16 +79,26 @@ export function Sidebar(props: Props) {
             <span>{p.label}</span>
           </button>
         ))}
+        {/* Close button on mobile/tablet */}
+        {isNarrow && (
+          <button onClick={onCloseDrawer} style={{
+            padding: '10px 12px', background: 'none', border: 'none',
+            cursor: 'pointer', color: 'var(--color-muted)',
+            display: 'flex', alignItems: 'center',
+          }}>
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Panel body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
         {activePanel === 'blocks' && (
           selectedBlock
             ? <BlockSettingsPanel
                 block={selectedBlock}
                 newsletter={newsletter}
-                onClose={() => props.onSelectBlock(null)}
+                onClose={() => { props.onSelectBlock(null); if (isNarrow) onCloseDrawer(); }}
                 onUpdateBlock={props.onUpdateBlock}
                 onAddArticle={props.onAddArticle}
                 onUpdateArticle={props.onUpdateArticle}
@@ -97,20 +107,57 @@ export function Sidebar(props: Props) {
                 onUpdateQuickHit={props.onUpdateQuickHit}
                 onDeleteQuickHit={props.onDeleteQuickHit}
               />
-            : <BlockPickerPanel onAddBlock={props.onAddBlock} />
+            : <BlockPickerPanel onAddBlock={(type) => { props.onAddBlock(type); if (isNarrow) onCloseDrawer(); }} />
         )}
         {activePanel === 'settings' && <SettingsPanel newsletter={newsletter} onUpdateMeta={() => {}} />}
         {activePanel === 'rss' && <RssPanel rss={rss} onAddToNewsletter={(item) => {
-          // Add as article to first article-grid block
           const gridId = newsletter.blockOrder.find(id => newsletter.blocks[id]?.type === 'article-grid');
-          if (gridId) {
-            props.onAddArticle(gridId);
-            // Note: we'd need to also pre-fill it, which requires a different dispatch
-          }
+          if (gridId) props.onAddArticle(gridId);
         }} />}
         {activePanel === 'theme' && <ThemePanel current={newsletter.theme} onUpdateTheme={props.onUpdateTheme} />}
         {activePanel === 'export' && <VersionsPanel versions={versions} onRestore={props.onRestoreVersion} onDelete={props.onDeleteVersion} />}
       </div>
+    </>
+  );
+
+  // ── Desktop: static sidebar ───────────────────────────────────────────────
+  if (!isNarrow) {
+    return (
+      <div style={{
+        width: 320, flexShrink: 0,
+        display: 'flex', flexDirection: 'column',
+        background: 'var(--color-surface)',
+        borderRight: '1px solid var(--color-border)',
+        overflow: 'hidden',
+      }}>
+        {panelBody}
+      </div>
+    );
+  }
+
+  // ── Mobile (< 768px): bottom sheet ───────────────────────────────────────
+  if (isMobile) {
+    if (!drawerOpen) return null;
+    return (
+      <div className="nap-bottom-sheet">
+        {panelBody}
+      </div>
+    );
+  }
+
+  // ── Tablet (768–1023px): slide-in drawer ──────────────────────────────────
+  return (
+    <div
+      className={`nap-sidebar-drawer ${drawerOpen ? 'open' : ''}`}
+      style={{
+        display: 'flex', flexDirection: 'column',
+        background: 'var(--color-surface)',
+        borderRight: '1px solid var(--color-border)',
+        overflow: 'hidden',
+        width: 320,
+      }}
+    >
+      {panelBody}
     </div>
   );
 }
@@ -203,8 +250,6 @@ function RssPanel({ rss, onAddToNewsletter }: { rss: Props['rss']; onAddToNewsle
           {rss.loading ? 'Refreshing…' : 'Refresh'}
         </button>
       </div>
-
-      {/* Feed list */}
       <div style={{ marginBottom: 16 }}>
         {rss.feeds.map(feed => (
           <div key={feed.url} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--color-border)' }}>
@@ -220,8 +265,6 @@ function RssPanel({ rss, onAddToNewsletter }: { rss: Props['rss']; onAddToNewsle
           </div>
         ))}
       </div>
-
-      {/* Add feed */}
       <div style={{ background: 'var(--color-bg)', borderRadius: 8, padding: 12, marginBottom: 16 }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: 8 }}>Add Feed</div>
         <input placeholder="RSS URL" value={newUrl} onChange={e => setNewUrl(e.target.value)} style={{ ...inputStyle, marginBottom: 6 }} />
@@ -231,8 +274,6 @@ function RssPanel({ rss, onAddToNewsletter }: { rss: Props['rss']; onAddToNewsle
           + Add Feed
         </button>
       </div>
-
-      {/* Filter + items */}
       {rss.items.length > 0 && (
         <>
           <input placeholder="Filter articles…" value={rss.filter} onChange={e => rss.setFilter(e.target.value)}
@@ -245,9 +286,7 @@ function RssPanel({ rss, onAddToNewsletter }: { rss: Props['rss']; onAddToNewsle
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {rss.items.slice(0, 30).map((item, i) => (
               <div key={i} style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 10, background: 'var(--color-surface)' }}>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: 'var(--color-text)', marginBottom: 4, lineHeight: 1.35 }}>
-                  {item.title}
-                </div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: 'var(--color-text)', marginBottom: 4, lineHeight: 1.35 }}>{item.title}</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted)', marginBottom: 6 }}>
                   {item.source} · {item.pubDate ? new Date(item.pubDate).toLocaleDateString() : ''}
                 </div>
@@ -292,7 +331,6 @@ function ThemePanel({ current, onUpdateTheme }: { current: ThemePreset; onUpdate
               border: `2px solid ${current.id === theme.id ? 'var(--color-accent)' : 'var(--color-border)'}`,
               borderRadius: 10, cursor: 'pointer', textAlign: 'left',
             }}>
-            {/* Color swatches */}
             <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
               {[theme.primary, theme.accent, theme.background, theme.surface].map((c, i) => (
                 <div key={i} style={{ width: 14, height: 14, background: c, borderRadius: 3, border: '1px solid rgba(0,0,0,0.1)' }} />
@@ -308,24 +346,20 @@ function ThemePanel({ current, onUpdateTheme }: { current: ThemePreset; onUpdate
           </button>
         ))}
       </div>
-
-      {/* Custom colors */}
       <div style={{ marginTop: 20 }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: 12 }}>Customize</div>
-        {[
-          ['Primary', 'primary' as keyof ThemePreset],
-          ['Accent', 'accent' as keyof ThemePreset],
-          ['Background', 'background' as keyof ThemePreset],
-          ['Surface', 'surface' as keyof ThemePreset],
-        ].map(([label, key]) => (
+        {([
+          ['Primary', 'primary'],
+          ['Accent', 'accent'],
+          ['Background', 'background'],
+          ['Surface', 'surface'],
+        ] as [string, keyof ThemePreset][]).map(([label, key]) => (
           <div key={String(key)} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <input type="color" value={String(current[key as keyof ThemePreset])}
+            <input type="color" value={String(current[key])}
               onChange={e => onUpdateTheme({ ...current, [key]: e.target.value })}
               style={{ width: 32, height: 32, borderRadius: 6, border: '1px solid var(--color-border)', padding: 2, cursor: 'pointer' }} />
-            <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--color-text)' }}>{label as string}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted)' }}>
-              {String(current[key as keyof ThemePreset])}
-            </span>
+            <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--color-text)' }}>{label}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted)' }}>{String(current[key])}</span>
           </div>
         ))}
       </div>
