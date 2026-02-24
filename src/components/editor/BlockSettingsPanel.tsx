@@ -60,7 +60,7 @@ export function BlockSettingsPanel({ block, onClose, onUpdateBlock, onAddArticle
         {block.type === 'spacer' && <SpacerSettings block={block as any} upd={upd} />}
         {block.type === 'footer' && <FooterSettings block={block as any} upd={upd} />}
         {block.type === 'ai-safety' && <AiSafetySettings block={block as any} upd={upd} />}
-        {block.type === 'northwell-spotlight' && <NorthwellSpotlightSettings block={block as any} upd={upd} />}
+        {block.type === 'institutional-spotlight' && <InstitutionalSpotlightSettings block={block as any} upd={upd} />}
         {block.type === 'rss-sidebar' && <RssSidebarSettings block={block as any} upd={upd} />}
         {block.type === 'clinical-prompt-templates' && <ClinicalPromptTemplateSettings block={block as any} upd={upd} />}
       </div>
@@ -506,7 +506,7 @@ function TermSettings({ block, upd }: any) {
     <Field label="Term"><input style={inputStyle} value={block.term} onChange={e => upd({ term: e.target.value })} /></Field>
     <Field label="Definition"><textarea style={textareaStyle} value={block.definition} onChange={e => upd({ definition: e.target.value })} /></Field>
     <Field label="Relevance to Medicine"><textarea style={textareaStyle} value={block.relevance} onChange={e => upd({ relevance: e.target.value })} /></Field>
-    <Field label="Neurology Application"><textarea style={textareaStyle} value={block.neurologyApplication} onChange={e => upd({ neurologyApplication: e.target.value })} /></Field>
+    <Field label="Clinical Application"><textarea style={textareaStyle} value={block.clinicalApplication} onChange={e => upd({ clinicalApplication: e.target.value })} /></Field>
     <Field label="Related Terms" hint="Comma-separated">
       <input style={inputStyle} value={(block.relatedTerms || []).join(', ')} onChange={e => upd({ relatedTerms: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) })} />
     </Field>
@@ -874,19 +874,20 @@ function AiSafetySettingsPanel({ block, upd }: any) {
   </>);
 }
 
-// ─── Northwell Spotlight Settings ─────────────────────────────────────────────
-function NorthwellSpotlightSettings({ block, upd }: any) {
+// ─── Institutional Spotlight Settings ─────────────────────────────────────────
+function InstitutionalSpotlightSettings({ block, upd }: any) {
   const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const items = block.items || [];
 
   return (<>
     <Field label="Heading"><input style={inputStyle} value={block.heading} onChange={e => upd({ heading: e.target.value })} /></Field>
     <Field label="Subheading"><input style={inputStyle} value={block.subheading} onChange={e => upd({ subheading: e.target.value })} /></Field>
+    <Field label="Institution Label"><input style={inputStyle} value={block.institutionLabel || ''} onChange={e => upd({ institutionLabel: e.target.value })} placeholder="e.g. Northwell Health, Mayo Clinic…" /></Field>
     <Field label="Max Items (1–6)"><input style={inputStyle} type="number" min={1} max={6} value={block.maxItems || 6} onChange={e => upd({ maxItems: Number(e.target.value) })} /></Field>
     <div style={{ marginTop: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>{items.length} Items</span>
-        <button onClick={() => upd({ items: [...items, { id: String(Date.now()), title: 'New Northwell Item', url: '', pubDate: new Date().toISOString(), summary: '', imageUrl: '', category: 'AI Innovation' }] })}
+        <button onClick={() => upd({ items: [...items, { id: String(Date.now()), title: 'New Item', url: '', pubDate: new Date().toISOString(), summary: '', imageUrl: '', category: 'Innovation' }] })}
           style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'var(--color-accent)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 12, fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
           <Plus size={11} /> Add Item
         </button>
@@ -902,7 +903,7 @@ function NorthwellSpotlightSettings({ block, upd }: any) {
           </div>
           <Field label="Category"><input style={inputStyle} value={item.category} onChange={e => { const it = [...items]; it[i] = {...item, category: e.target.value}; upd({ items: it }); }} /></Field>
           <Field label="Title"><input style={inputStyle} value={item.title} onChange={e => { const it = [...items]; it[i] = {...item, title: e.target.value}; upd({ items: it }); }} /></Field>
-          <Field label="URL"><input style={inputStyle} value={item.url} onChange={e => { const it = [...items]; it[i] = {...item, url: e.target.value}; upd({ items: it }); }} placeholder="https://northwell.edu/…" /></Field>
+          <Field label="URL"><input style={inputStyle} value={item.url} onChange={e => { const it = [...items]; it[i] = {...item, url: e.target.value}; upd({ items: it }); }} placeholder="https://…" /></Field>
           <Field label="Summary"><textarea style={{ ...textareaStyle, minHeight: 60 }} value={item.summary} onChange={e => { const it = [...items]; it[i] = {...item, summary: e.target.value}; upd({ items: it }); }} /></Field>
           <Field label="Image URL"><input style={inputStyle} value={item.imageUrl} onChange={e => { const it = [...items]; it[i] = {...item, imageUrl: e.target.value}; upd({ items: it }); }} placeholder="https://…" /></Field>
           <Field label="Upload Image">

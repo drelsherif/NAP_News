@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neurology AI Pulse | Archive</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Neurology AI Pulse is a clinician-led monthly digest highlighting AI in neurology, legal and governance issues, and practical guidance for navigating generative AI in healthcare." />
+  <meta property="og:title" content="Neurology AI Pulse — Clinical AI & Neurology" />
+  <meta property="og:description" content="A clinician-led digest highlighting neurology AI innovation, legal governance, and practical tools for healthcare professionals." />
+  <meta property="og:url" content="https://pulse.globalai-medicine.org/" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Neurology AI Pulse" />
+  <meta name="twitter:description" content="Clinical AI, neurology, and governance—distilled for real-world practice." />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root{
+      --accent:#00f2ff;
+      --bg:#000;
+      --glass:rgba(255,255,255,0.05);
+      --glass2:rgba(255,255,255,0.035);
+      --border:rgba(255,255,255,0.12);
+      --muted:rgba(255,255,255,0.68);
+      --muted2:rgba(255,255,255,0.45);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; background:var(--bg); color:#fff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow-x:hidden;
+    }
+    #canvas-container{
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      z-index:-1;
+    }
+
+    .container{
+      max-width:1120px;
+      margin:0 auto;
+      padding:78px 20px 140px;
+    }
+
+    /* HERO */
+    .hero{
+      display:flex; flex-direction:column; gap:14px;
+      align-items:flex-start;
+      margin-bottom:22px;
+    }
+    .brandline{
+      display:flex; align-items:center; gap:12px;
+    }
+    .mark{
+      width:12px; height:12px; border-radius:999px;
+      background:var(--accent);
+      box-shadow:0 0 18px rgba(0,242,255,0.55);
+    }
+    h1{
+      margin:0;
+      font-weight:320;
+      letter-spacing:8px;
+      text-transform:uppercase;
+      color:var(--accent);
+      font-size:1.7rem;
+      line-height:1.1;
+    }
+    .tagline{
+      margin:0;
+      color:rgba(255,255,255,0.78);
+      letter-spacing:1.5px;
+      font-size:1.0rem;
+      max-width:900px;
+      line-height:1.35;
+    }
+    .lede{
+      margin:0;
+      max-width:900px;
+      color:var(--muted);
+      font-size:0.98rem;
+      line-height:1.55;
+    }
+
+    .submeta{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:6px;
+    }
+    .pill{
+      padding:7px 11px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.03);
+      backdrop-filter: blur(10px);
+      font-size:0.70rem;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color:rgba(255,255,255,0.78);
+    }
+
+    .top-actions{
+      display:flex; gap:12px; flex-wrap:wrap;
+      align-items:center;
+      margin:22px 0 18px;
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:12px 16px;
+      border-radius:999px;
+      text-decoration:none;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+      color:#fff;
+      font-size:0.72rem;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      transition:.22s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{
+      border-color:rgba(0,242,255,0.6);
+      background:rgba(0,242,255,0.10);
+      color:var(--accent);
+    }
+    .btn.primary{
+      border-color:rgba(0,242,255,0.55);
+      background:rgba(0,242,255,0.10);
+    }
+
+    .divider{
+      height:1px;
+      background:linear-gradient(90deg, rgba(0,242,255,0.0), rgba(0,242,255,0.38), rgba(0,242,255,0.0));
+      margin:16px 0 26px;
+    }
+
+    /* GRID */
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+      gap:18px;
+    }
+    .issue-card{
+      display:block;
+      text-decoration:none;
+      color:#fff;
+      border:1px solid var(--border);
+      background:var(--glass2);
+      backdrop-filter: blur(16px);
+      border-radius:18px;
+      padding:20px 20px 18px;
+      transition:transform .22s ease, border-color .22s ease, background .22s ease;
+      position:relative;
+      overflow:hidden;
+      min-height:180px;
+    }
+    .issue-card:hover{
+      transform:translateY(-5px);
+      background:var(--glass);
+      border-color:rgba(0,242,255,0.45);
+    }
+    .issue-top{
+      display:flex; justify-content:space-between; align-items:flex-start;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .issue-num{
+      font-size:1.6rem; font-weight:850; line-height:1;
+    }
+    .issue-date{
+      color:var(--accent);
+      opacity:0.9;
+      font-size:0.74rem;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      margin-top:4px;
+    }
+    .issue-title{
+      font-weight:750;
+      letter-spacing:0.3px;
+      margin:8px 0 8px;
+      font-size:1.02rem;
+    }
+    .issue-desc{
+      color:var(--muted);
+      font-size:0.90rem;
+      line-height:1.45;
+      margin:0 0 12px;
+    }
+
+    .highlights{
+      display:flex; flex-direction:column; gap:8px;
+      padding-top:12px;
+      border-top:1px solid rgba(255,255,255,0.08);
+      margin-top:10px;
+    }
+    .hl-row{
+      display:flex; gap:8px; align-items:flex-start;
+      color:rgba(255,255,255,0.78);
+      font-size:0.82rem;
+      line-height:1.35;
+    }
+    .hl-label{
+      color:var(--accent);
+      opacity:0.95;
+      font-size:0.70rem;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      padding:4px 8px;
+      border:1px solid rgba(0,242,255,0.22);
+      border-radius:999px;
+      background:rgba(0,242,255,0.06);
+      white-space:nowrap;
+      margin-top:1px;
+    }
+
+    /* FOOTER */
+    footer{
+      position:fixed; bottom:0; width:100%;
+      padding:18px 0;
+      z-index:10;
+      pointer-events:none;
+    }
+    .footer-content{
+      max-width:1120px;
+      margin:0 auto;
+      padding:0 20px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      pointer-events:auto;
+    }
+    .stat-bar{
+      font-size:0.68rem;
+      letter-spacing:3px;
+      opacity:0.45;
+      text-transform:uppercase;
+      text-align:right;
+    }
+
+    @media (max-width: 780px){
+      .footer-content{ flex-direction:column; align-items:flex-start; }
+      .stat-bar{ text-align:left; }
+      h1{ letter-spacing:6px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvas-container"></div>
+
+  <div class="container">
+    <div class="hero">
+      <div class="brandline">
+        <div class="mark"></div>
+        <h1>Neurology AI Pulse</h1>
+      </div>
+
+      <p class="tagline">
+        A clinician-led monthly digest of artificial intelligence, neuroscience, and governance in modern neurological practice.
+      </p>
+
+      <p class="lede">
+        Neurology AI Pulse provides distilled, practice-relevant insights that highlight meaningful innovation in neurology AI,
+        surface emerging legal and governance issues, and offer practical guidance to help healthcare teams navigate the rapidly
+        evolving field of AI and generative AI—without hype or unnecessary complexity.
+      </p>
+
+      <div class="submeta">
+        <span class="pill">Clinical AI</span>
+        <span class="pill">Neurology</span>
+        <span class="pill">Governance & Safety</span>
+        <span class="pill">Generative AI</span>
+      </div>
+
+      <div class="top-actions">
+        <!-- Update this "Latest Issue" link when you publish a new one -->
+        <a class="btn primary" href="Issues/Mar2026/export_web/index.html#/preview">Read Latest Issue</a>
+        <a class="btn" href="editorial-standards.html">Editorial Standards</a>
+        <a class="btn" href="mailto:yelsherif@northwell.edu?subject=Neurology%20AI%20Pulse%20Newsletter%20Suggestions%2FComments">Contact</a>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="grid" id="issue-grid"></div>
+  </div>
+
+  <footer>
+    <div class="footer-content">
+      <a class="btn"
+         href="mailto:yelsherif@northwell.edu?subject=Neurology%20AI%20Pulse%20Newsletter%20Suggestions%2FComments">
+        Contact Us
+      </a>
+
+      <div class="stat-bar">
+        Active Visitors: <span id="visitor-count" style="color:var(--accent)">...</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    async function loadVisitors() {
+      try {
+        const res = await fetch('https://api.counterapi.dev/v1/neurology-ai-pulse-el-sherif/main/up');
+        const data = await res.json();
+        document.getElementById('visitor-count').innerText = (data.count ?? 0).toLocaleString();
+      } catch (e) {
+        document.getElementById('visitor-count').innerText = "LIVE";
+      }
+    }
+
+    /*
+      ISSUE CARDS
+      Each issue has Spotlight + Governance highlights (consistent for every issue).
+      Update/add issues as you publish.
+    */
+    const issues = [
+      {
+        id: 1,
+        month: "Mar",
+        year: 2026,
+        title: "Issue 001",
+        path: "Issues/Mar2026/export_web/index.html#/preview",
+        spotlight: "Clinical AI highlights + practical prompting for neurology workflows.",
+        governance: "Cognitive rights and legal protections for brain–computer interfaces."
+      }
+      // Add next issues here...
+    ];
+
+    async function exists(url) {
+      try {
+        const res = await fetch(url.replace(/#.*$/, ""), { method: "HEAD", cache: "no-store" });
+        return res.ok;
+      } catch (e) { return false; }
+    }
+
+    async function renderArchive() {
+      const grid = document.getElementById("issue-grid");
+      for (const issue of issues) {
+        const ok = await exists(issue.path);
+        if (!ok) continue;
+
+        const a = document.createElement("a");
+        a.className = "issue-card";
+        a.href = issue.path;
+
+        a.innerHTML = `
+          <div class="issue-top">
+            <div>
+              <div class="issue-num">#${issue.id}</div>
+              <div class="issue-date">${issue.month} ${issue.year}</div>
+            </div>
+            <div style="opacity:0.75; font-size:1.2rem;">→</div>
+          </div>
+
+          <div class="issue-title">${issue.title}</div>
+
+          <div class="issue-desc">
+            Spotlight + Governance highlights curated for clinicians, educators, and healthcare leaders.
+          </div>
+
+          <div class="highlights">
+            <div class="hl-row">
+              <span class="hl-label">Spotlight</span>
+              <span>${issue.spotlight}</span>
+            </div>
+            <div class="hl-row">
+              <span class="hl-label">Governance</span>
+              <span>${issue.governance}</span>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(a);
+      }
+    }
+
+    window.onload = () => {
+      loadVisitors();
+      renderArchive();
+    };
+  </script>
+
+  <script src="js/neural.js"></script>
+</body>
+</html> 

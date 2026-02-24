@@ -285,7 +285,7 @@ function AddBlockBetween({ onAdd }: { onAdd: (type: BlockType) => void }) {
     { type: 'spacer', label: '↕️ Spacer' },
     { type: 'quick-hits', label: '⚡ Quick Hits' },
     { type: 'ai-safety', label: '🛡️ AI Safety' },
-    { type: 'northwell-spotlight', label: '🏥 Northwell' },
+    { type: 'institutional-spotlight', label: '🏥 Institutional' },
     { type: 'rss-sidebar', label: '📡 RSS Feed' },
     { type: 'prompt-template', label: '🧩 Template Prompt' },
     { type: 'safety-reminders', label: '⚠️ Safety Reminders' },

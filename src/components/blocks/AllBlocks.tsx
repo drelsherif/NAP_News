@@ -22,11 +22,11 @@ import type {
   SpacerBlock as SpacerBlockType,
   FooterBlock as FooterBlockType,
   AiSafetyBlock as AiSafetyBlockType,
-  NorthwellSpotlightBlock as NorthwellSpotlightBlockType,
+  InstitutionalSpotlightBlock as InstitutionalSpotlightBlockType,
   RssSidebarBlock as RssSidebarBlockType,
   ClinicalPrompt,
   SafetyUpdate,
-  NorthwellItem,
+  InstitutionalItem,
 } from '../../types';
 
 import { EditableText } from './EditableText';
@@ -797,7 +797,7 @@ export function TermOfMonthBlock({ block, theme, editable, onUpdateBlock }: { bl
         {editable ? <EditableText value={block.term || ''} placeholder="Term" onCommit={(v) => onUpdateBlock({ term: v })} style={{ display: 'block', width: '100%' }} /> : block.term}
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-        {[{ title: 'Definition', key: 'definition', content: block.definition }, { title: 'Relevance to Medicine', key: 'relevance', content: block.relevance }, { title: 'Neurology Application', key: 'neurologyApplication', content: block.neurologyApplication }].map(({ title, key, content }) => (
+        {[{ title: 'Definition', key: 'definition', content: block.definition }, { title: 'Relevance to Practice', key: 'relevance', content: block.relevance }, { title: 'Clinical Application', key: 'clinicalApplication', content: block.clinicalApplication }].map(({ title, key, content }) => (
           <div key={title} style={{ border: `1px solid ${theme.border}`, borderRadius: 10, padding: 16, background: theme.surface }}>
             <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: theme.muted, marginBottom: 8 }}>{title}</div>
             <p style={{ fontFamily: theme.fontBody, fontSize: 13, color: theme.text, margin: 0, lineHeight: 1.6 }}>
@@ -1085,15 +1085,15 @@ export function AiSafetyBlock({ block, theme, editable, onUpdateBlock }: { block
   );
 }
 
-// ─── Northwell Spotlight ──────────────────────────────────────────────────────
-export function NorthwellSpotlightBlock({ block, theme }: { block: NorthwellSpotlightBlockType; theme: T; newsletter: any; onUpdateBlock: any }) {
+// ─── Institutional Spotlight ──────────────────────────────────────────────────
+export function InstitutionalSpotlightBlock({ block, theme }: { block: InstitutionalSpotlightBlockType; theme: T; newsletter: any; onUpdateBlock: any }) {
   return (
     <div style={pad(28, 40)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
         <div style={{ width: 28, height: 28, background: theme.primary, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: 14 }}>🏥</span>
         </div>
-        <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.primary }}>Northwell Health</div>
+        <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: theme.primary }}>{block.institutionLabel || 'Your Institution'}</div>
       </div>
       <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.text, margin: '0 0 4px', fontWeight: 400 }}>{block.heading}</h2>
       {block.subheading && <p style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.muted, margin: '0 0 20px' }}>{block.subheading}</p>}
@@ -1281,7 +1281,9 @@ export function RssSidebarBlock(
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 export function FooterBlock({ block, theme }: { block: FooterBlockType; theme: T }) {
-  const contactHref = `mailto:yelsherif@northwell.edu?subject=${encodeURIComponent('Neurology AI Pulse Newsletter Suggestions/Comments')}`;
+  const contactHref = block.contactEmail
+    ? `mailto:${block.contactEmail}?subject=${encodeURIComponent('Newsletter Feedback')}`
+    : '#';
 
   return (
     <div className="nap-white-section" style={{ background: theme.primary, padding: '44px 40px 36px', textAlign: 'center', color: '#fff' }}>

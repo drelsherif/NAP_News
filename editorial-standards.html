@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neurology AI Pulse | Editorial Standards</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Editorial standards for Neurology AI Pulse: evidence, governance, transparency, and clinical relevance in AI and neurology." />
+  <meta property="og:title" content="Neurology AI Pulse — Editorial Standards" />
+  <meta property="og:description" content="How Neurology AI Pulse selects sources, separates commentary from evidence, and approaches AI governance in clinical neurology." />
+  <meta property="og:url" content="https://pulse.globalai-medicine.org/editorial-standards.html" />
+  <meta property="og:type" content="website" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root{
+      --accent:#00f2ff;
+      --bg:#000;
+      --glass2:rgba(255,255,255,0.035);
+      --border:rgba(255,255,255,0.12);
+      --muted:rgba(255,255,255,0.70);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; background:var(--bg); color:#fff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow-x:hidden;
+    }
+    #canvas-container{
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      z-index:-1;
+    }
+
+    .container{
+      max-width:960px;
+      margin:0 auto;
+      padding:78px 20px 120px;
+    }
+
+    .topbar{
+      display:flex; justify-content:space-between; align-items:center;
+      gap:12px; flex-wrap:wrap;
+      margin-bottom:22px;
+    }
+
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:12px 16px;
+      border-radius:999px;
+      text-decoration:none;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+      color:#fff;
+      font-size:0.72rem;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      transition:.22s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{
+      border-color:rgba(0,242,255,0.6);
+      background:rgba(0,242,255,0.10);
+      color:var(--accent);
+    }
+
+    h1{
+      margin:0 0 8px;
+      font-weight:320;
+      letter-spacing:4px;
+      text-transform:uppercase;
+      color:var(--accent);
+      font-size:1.35rem;
+    }
+    .subtitle{
+      color:var(--muted);
+      margin:0 0 18px;
+      line-height:1.55;
+      font-size:0.98rem;
+      max-width:880px;
+    }
+
+    .panel{
+      border:1px solid var(--border);
+      background:var(--glass2);
+      backdrop-filter: blur(14px);
+      border-radius:18px;
+      padding:22px 22px 14px;
+    }
+
+    h2{
+      font-size:0.85rem;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      color:rgba(255,255,255,0.82);
+      margin:22px 0 10px;
+    }
+
+    p, li{
+      color:rgba(255,255,255,0.78);
+      line-height:1.6;
+      font-size:0.96rem;
+    }
+
+    ul{ margin:10px 0 0 18px; }
+    .note{
+      margin-top:18px;
+      padding:14px 16px;
+      border-radius:14px;
+      border:1px solid rgba(0,242,255,0.22);
+      background:rgba(0,242,255,0.06);
+      color:rgba(255,255,255,0.82);
+    }
+    .note strong{ color:var(--accent); }
+
+    footer{
+      margin-top:26px;
+      color:rgba(255,255,255,0.55);
+      font-size:0.78rem;
+      letter-spacing:1px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvas-container"></div>
+
+  <div class="container">
+    <div class="topbar">
+      <a class="btn" href="index.html">← Back to Archive</a>
+      <a class="btn" href="mailto:yelsherif@northwell.edu?subject=Neurology%20AI%20Pulse%20%E2%80%93%20Editorial%20Feedback">Send Feedback</a>
+    </div>
+
+    <h1>Editorial Standards</h1>
+    <p class="subtitle">
+      Neurology AI Pulse is a clinician-led publication designed to provide distilled, practice-relevant insights on AI in neurology,
+      with a specific emphasis on governance, safety, and accountability.
+    </p>
+
+    <div class="panel">
+      <h2>Purpose and Scope</h2>
+      <p>
+        The Pulse highlights meaningful clinical innovation, emerging legal and regulatory developments, and practical guidance for
+        navigating AI and generative AI in healthcare. We prioritize signal over volume, and clarity over hype.
+      </p>
+
+      <h2>Editorial Independence</h2>
+      <p>
+        Content is selected editorially. Inclusion does not constitute endorsement. The Pulse is not sponsored, and editorial choices
+        are not driven by vendor relationships.
+      </p>
+
+      <h2>Selection Principles</h2>
+      <ul>
+        <li>Clinical relevance to neurology or neuroscience-adjacent practice</li>
+        <li>Impact on patient care, documentation, or workflow</li>
+        <li>Governance implications: safety, privacy, bias, accountability, consent</li>
+        <li>Actionable insight: clear takeaways and paths for deeper exploration</li>
+      </ul>
+
+      <h2>Evidence and Sources</h2>
+      <p>
+        We prefer primary sources (peer-reviewed studies, legal scholarship, regulatory texts, official guidance). News sources may be
+        included when reporting verifiable clinical, legal, or regulatory developments. Commentary is clearly separated from cited content.
+      </p>
+
+      <h2>Clinical and Legal Boundaries</h2>
+      <p>
+        Neurology AI Pulse is educational and does not provide medical or legal advice. It does not replace clinical judgment, institutional
+        policy, or professional consultation.
+      </p>
+
+      <h2>AI Use and Transparency</h2>
+      <p>
+        AI tools may assist with drafting, summarization, or language refinement, but editorial content is curated and finalized by a clinician-editor.
+        AI output is not treated as authoritative without verification.
+      </p>
+
+      <h2>Corrections</h2>
+      <p>
+        If an error is identified, we aim to correct it promptly and update context as evidence and regulations evolve.
+      </p>
+
+      <div class="note">
+        <strong>Editorial philosophy:</strong> AI in neurology should be powerful, transparent, and accountable—and always subordinate to human clinical judgment.
+      </div>
+
+      <footer>
+        Contact: <a style="color:var(--accent); text-decoration:none;"
+          href="mailto:yelsherif@northwell.edu?subject=Neurology%20AI%20Pulse%20%E2%80%93%20Editorial%20Feedback">yelsherif@northwell.edu</a>
+      </footer>
+    </div>
+  </div>
+
+  <script src="js/neural.js"></script>
+</body>
+</html> 

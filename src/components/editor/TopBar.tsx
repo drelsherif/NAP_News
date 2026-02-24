@@ -35,7 +35,7 @@ export function TopBar({ newsletter, editorState, lastSaved, onSave, onSaveVersi
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ color: '#fff', fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 400, lineHeight: 1.1 }}>
-            The Neurology AI Pulse
+            {newsletter.meta.title || 'Newsletter Builder'}
           </span>
           <span style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
             Issue {newsletter.meta.issueNumber} Builder

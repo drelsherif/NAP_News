@@ -41,7 +41,7 @@ const BLOCK_GROUPS: { label: string; types: BlockType[] }[] = [
   { label: 'Structure', types: ['header', 'ticker', 'section-divider', 'spacer', 'footer'] },
   { label: 'Content', types: ['article-grid', 'spotlight', 'ethics-split', 'quick-hits', 'text', 'image', 'html-embed'] },
   { label: 'Clinical AI Skills', types: ['prompt-masterclass', 'sbar-prompt', 'prompt-template', 'safety-reminders', 'clinical-prompt-templates', 'term-of-month', 'ai-case-file'] },
-  { label: 'Safety & Institutional', types: ['ai-safety', 'northwell-spotlight', 'rss-sidebar', 'humor'] },
+  { label: 'Safety & Institutional', types: ['ai-safety', 'institutional-spotlight', 'rss-sidebar', 'humor'] },
 ];
 
 export function Sidebar(props: Props) {

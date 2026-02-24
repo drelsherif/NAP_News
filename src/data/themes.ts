@@ -2,8 +2,8 @@ import type { ThemePreset } from '../types';
 
 export const THEMES: ThemePreset[] = [
   {
-    id: 'northwell',
-    name: 'Northwell Blue',
+    id: 'professional',
+    name: 'Professional Blue',
     primary: '#003087',
     secondary: '#0057A8',
     accent: '#009CDE',

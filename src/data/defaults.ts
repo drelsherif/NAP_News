@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type {
   Block, BlockType, Newsletter, NewsletterMeta, ThemePreset,
-  Article, QuickHit, SbarStep, ClinicalPrompt, SafetyUpdate, NorthwellItem,
+  Article, QuickHit, SbarStep, ClinicalPrompt, SafetyUpdate, InstitutionalItem,
 } from '../types';
 import { THEMES } from './themes';
 
@@ -22,11 +22,11 @@ export function makeArticle(overrides: Partial<Article> = {}): Article {
 export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
   header: () => ({
     id: uuidv4(), type: 'header',
-    title: 'The Neurology AI Pulse',
-    subtitle: 'Artificial Intelligence in Clinical Neuroscience',
+    title: 'Your Newsletter Title',
+    subtitle: 'Your Newsletter Subtitle or Focus Area',
     issueNumber: 'Issue 001',
     issueDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-    tagline: 'Edited by Yasir El-Sherif MD, PhD & Jai Shahani MD · Staten Island University Hospital · Northwell Health',
+    tagline: 'Edited by Your Name · Your Department · Your Institution',
     logoUrl: '', logoDataUrl: '', backgroundStyle: 'gradient', accentColor: '#009CDE',
   }),
 
@@ -34,9 +34,9 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
     id: uuidv4(), type: 'ticker',
     sourceMode: 'manual',
     items: [
-      'Nature Medicine: AI CT screening reaches 94% sensitivity across 47 RCTs',
-      'FDA authorizes record 692 AI medical devices in 2024',
-      'JAMA RCT: AI scribes reduce physician burnout 34% at 6 months',
+      'Add your first ticker headline here',
+      'Breaking news item two — edit me',
+      'Ticker item three — click to customize',
     ],
     links: [],
     useLinks: false,
@@ -49,13 +49,13 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
 
   'section-divider': () => ({
     id: uuidv4(), type: 'section-divider',
-    label: 'TOP NEUROLOGY AI NEWS', style: 'gradient', number: 1, description: '',
+    label: 'SECTION TITLE', style: 'gradient', number: 1, description: '',
   }),
 
   'article-grid': () => ({
     id: uuidv4(), type: 'article-grid',
-    sectionTitle: 'This Week in Neurology AI', columns: 2, layout: 'card',
-    articles: [makeArticle({ title: 'AI Seizure Detection: CNN vs LSTM' }), makeArticle({ title: 'Foundation Models in Neuroradiology' })],
+    sectionTitle: 'Featured Articles', columns: 2, layout: 'card',
+    articles: [makeArticle({ title: 'Article Title One' }), makeArticle({ title: 'Article Title Two' })],
   }),
 
   spotlight: () => ({
@@ -66,10 +66,10 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
 
   'ethics-split': () => ({
     id: uuidv4(), type: 'ethics-split',
-    heading: 'AI Governance & Ethics Update',
-    subheading: 'What it means for clinical practice',
+    heading: 'Ethics & Governance Update',
+    subheading: 'What it means for practice',
     leftTitle: 'The Concern', leftContent: 'Describe the ethical or governance concern here.',
-    rightTitle: 'Clinical Perspective', rightContent: 'Your clinical perspective and recommended approach.',
+    rightTitle: 'Clinical Perspective', rightContent: 'Your perspective and recommended approach.',
     clinicalPerspective: '', url: '', source: '',
   }),
 
@@ -211,8 +211,8 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
     id: uuidv4(), type: 'term-of-month',
     term: 'Foundation Model',
     definition: 'A large-scale AI model trained on broad, diverse data that serves as a reusable base adaptable to many downstream tasks — including text, medical imaging, and multimodal applications.',
-    relevance: 'Foundation models shift clinical AI from narrow, single-disease algorithms to robust systems that can generalize across conditions — enabling faster iteration and broader utility, while introducing new governance and validation challenges.',
-    neurologyApplication: 'A vision foundation model trained on large MRI datasets can screen for multiple emergencies (stroke, hemorrhage, mass effect, hydrocephalus) from a single inference, rather than requiring separate validated detectors for each pathology.',
+    relevance: 'Foundation models shift AI from narrow, single-disease algorithms to robust systems that can generalize across conditions — enabling faster iteration and broader utility, while introducing new governance and validation challenges.',
+    clinicalApplication: 'A vision foundation model trained on large imaging datasets can screen for multiple conditions from a single inference, rather than requiring separate validated detectors for each pathology.',
     relatedTerms: ['Transfer Learning', 'Fine-tuning', 'Large Language Model', 'GPT', 'Multimodal AI', 'BERT'],
   }),
 
@@ -239,9 +239,9 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
 
   humor: () => ({
     id: uuidv4(), type: 'humor',
-    heading: '🧠 Neurology Humor Break',
-    content: 'My AI dictation system transcribed "patient denies diplopia" as "patient denies diplopia, but suspects the government." To be fair, given the context of the visit, I cannot entirely rule this out.',
-    attribution: '— Submitted anonymously by a Northwell attending',
+    heading: '😄 Humor Break',
+    content: 'Add your humor, anecdote, or lighthearted content here. Something your readers will smile at.',
+    attribution: '— Submitted anonymously',
     emojiDecor: '🧠',
     imageUrl: '',
     imageDataUrl: '',
@@ -256,13 +256,13 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
 
   footer: () => ({
     id: uuidv4(), type: 'footer',
-    institution: 'Northwell Health', department: 'Department of Neurology',
-    editors: 'Yasir El-Sherif MD, PhD & Jai Shahani MD',
+    institution: 'Your Institution', department: 'Your Department',
+    editors: 'Editor Name(s)',
     unsubscribeUrl: '', subscribeUrl: '',
     websiteUrl: '',
-    contactEmail: 'yelsherif@northwell.edu',
+    contactEmail: '',
     copyrightYear: String(new Date().getFullYear()),
-    disclaimer: 'This newsletter is for educational purposes only and does not constitute medical advice. Content represents the views of the authors and not Northwell Health as an institution.',
+    disclaimer: 'This newsletter is for educational purposes only and does not constitute professional advice. Content represents the views of the authors and not the institution.',
     socials: [],
     showSocials: false, nextIssueDate: '', nextIssueTeaser: '',
   }),
@@ -303,23 +303,24 @@ export const BLOCK_DEFAULTS: Record<BlockType, () => Block> = {
     ] as SafetyUpdate[],
   }),
 
-  'northwell-spotlight': () => ({
-    id: uuidv4(), type: 'northwell-spotlight',
-    heading: 'Northwell Health AI Spotlight',
-    subheading: 'Latest AI innovation from across the Northwell system',
+  'institutional-spotlight': () => ({
+    id: uuidv4(), type: 'institutional-spotlight',
+    heading: 'Institutional Spotlight',
+    subheading: 'Latest news and innovation from your organization',
+    institutionLabel: 'Your Institution',
     autoFetch: false,
     lastFetched: '',
     maxItems: 6,
     items: [
       {
         id: uuidv4(), category: 'Innovation',
-        title: 'Add Northwell AI news item',
-        url: 'https://www.northwell.edu/news',
+        title: 'Add a news item',
+        url: '',
         pubDate: new Date().toISOString(),
-        summary: 'Summary of the Northwell AI initiative or news item.',
+        summary: 'Summary of this initiative or news item.',
         imageUrl: '',
       },
-    ] as NorthwellItem[],
+    ] as InstitutionalItem[],
   }),
 
   'rss-sidebar': () => ({
@@ -361,7 +362,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   'spacer':                    '↕️  Spacer',
   'footer':                    '🔻  Footer',
   'ai-safety':                 '🛡️  AI Safety Monitor',
-  'northwell-spotlight':       '🏥  Northwell AI Spotlight',
+  'institutional-spotlight':   '🏥  Institutional Spotlight',
   'rss-sidebar':               '📰  RSS Feed Panel',
 };
 
@@ -372,16 +373,16 @@ export function makeDefaultNewsletter(): Newsletter {
   const articleId = uuidv4(); const spotlightId = uuidv4(); const div2Id = uuidv4();
   const ethicsId = uuidv4(); const safetyId = uuidv4(); const div3Id = uuidv4();
   const sbarId = uuidv4(); const promptTplId = uuidv4(); const safetyRemId = uuidv4(); const templatesId = uuidv4(); const termId = uuidv4();
-  const div4Id = uuidv4(); const northwellId = uuidv4(); const rssSidebarId = uuidv4();
+  const div4Id = uuidv4(); const institutionalId = uuidv4(); const rssSidebarId = uuidv4();
   const humorId = uuidv4(); const spacerId = uuidv4(); const footerId = uuidv4();
 
   return {
     meta: {
-      id: uuidv4(), title: 'Neurology AI Pulse — Issue 001',
+      id: uuidv4(), title: 'My Newsletter — Issue 001',
       issueNumber: '001', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     },
     theme: THEMES[0],
-    blockOrder: [headerId, tickerId, div1Id, articleId, spotlightId, div2Id, ethicsId, safetyId, div3Id, sbarId, promptTplId, safetyRemId, templatesId, termId, div4Id, northwellId, rssSidebarId, humorId, spacerId, footerId],
+    blockOrder: [headerId, tickerId, div1Id, articleId, spotlightId, div2Id, ethicsId, safetyId, div3Id, sbarId, promptTplId, safetyRemId, templatesId, termId, div4Id, institutionalId, rssSidebarId, humorId, spacerId, footerId],
     blocks: {
       [headerId]: { ...BLOCK_DEFAULTS['header'](), id: headerId } as any,
       [tickerId]: { ...BLOCK_DEFAULTS['ticker'](), id: tickerId } as any,
@@ -398,7 +399,7 @@ export function makeDefaultNewsletter(): Newsletter {
       [templatesId]: { ...BLOCK_DEFAULTS['clinical-prompt-templates'](), id: templatesId } as any,
       [termId]: { ...BLOCK_DEFAULTS['term-of-month'](), id: termId } as any,
       [div4Id]: { ...BLOCK_DEFAULTS['section-divider'](), id: div4Id, label: 'NORTHWELL & COMMUNITY', number: 4 } as any,
-      [northwellId]: { ...BLOCK_DEFAULTS['northwell-spotlight'](), id: northwellId } as any,
+      [institutionalId]: { ...BLOCK_DEFAULTS['institutional-spotlight'](), id: institutionalId } as any,
       [rssSidebarId]: { ...BLOCK_DEFAULTS['rss-sidebar'](), id: rssSidebarId } as any,
       [humorId]: { ...BLOCK_DEFAULTS['humor'](), id: humorId } as any,
       [spacerId]: { ...BLOCK_DEFAULTS['spacer'](), id: spacerId } as any,

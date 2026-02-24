@@ -5,7 +5,7 @@ import {
   EthicsSplitBlock, ImageBlock, TextBlock, HtmlEmbedBlock, PromptMasterclassBlock,
   SbarPromptBlock, PromptTemplateBlock, SafetyRemindersBlock, ClinicalPromptTemplatesBlock, TermOfMonthBlock, AiCaseFileBlock,
   QuickHitsBlock, HumorBlock, SpacerBlock, FooterBlock,
-  AiSafetyBlock, NorthwellSpotlightBlock, RssSidebarBlock,
+  AiSafetyBlock, InstitutionalSpotlightBlock, RssSidebarBlock,
 } from './AllBlocks';
 
 interface Props {
@@ -51,7 +51,7 @@ export function BlockRenderer({ block, theme, newsletter, editable, onUpdateBloc
     case 'spacer':                    return <SpacerBlock block={block} {...sharedProps} />;
     case 'footer':                    return <FooterBlock block={block} {...sharedProps} />;
     case 'ai-safety':                 return <AiSafetyBlock block={block} {...sharedProps} />;
-    case 'northwell-spotlight':       return <NorthwellSpotlightBlock block={block} {...sharedProps} />;
+    case 'institutional-spotlight':   return <InstitutionalSpotlightBlock block={block} {...sharedProps} />;
     case 'rss-sidebar':               return <RssSidebarBlock block={block} {...sharedProps} />;
     default:
       return <div style={{ padding: 16, fontFamily: 'monospace', fontSize: 12, color: '#999' }}>Unknown block: {(block as any).type}</div>;

@@ -22,7 +22,7 @@ export type BlockType =
   | 'spacer'
   | 'footer'
   | 'ai-safety'
-  | 'northwell-spotlight'
+  | 'institutional-spotlight'
   | 'rss-sidebar';
 
 // ─── Article (shared sub-type) ───────────────────────────────────────────────
@@ -182,7 +182,7 @@ export interface TermOfMonthBlock {
   term: string;
   definition: string;
   relevance: string;
-  neurologyApplication: string;
+  clinicalApplication: string;
   relatedTerms: string[];
 }
 
@@ -292,9 +292,9 @@ export interface AiSafetyBlock {
   showLastUpdated: boolean;
 }
 
-// ─── Northwell Spotlight Block ────────────────────────────────────────────────
+// ─── Institutional Spotlight Block ────────────────────────────────────────────
 
-export interface NorthwellItem {
+export interface InstitutionalItem {
   id: string;
   title: string;
   url: string;
@@ -304,11 +304,12 @@ export interface NorthwellItem {
   category: string;
 }
 
-export interface NorthwellSpotlightBlock {
-  id: string; type: 'northwell-spotlight';
+export interface InstitutionalSpotlightBlock {
+  id: string; type: 'institutional-spotlight';
   heading: string;
   subheading: string;
-  items: NorthwellItem[];
+  institutionLabel: string;
+  items: InstitutionalItem[];
   autoFetch: boolean;
   lastFetched: string;
   maxItems: number;
@@ -352,7 +353,7 @@ export type Block =
   | SpacerBlock
   | FooterBlock
   | AiSafetyBlock
-  | NorthwellSpotlightBlock
+  | InstitutionalSpotlightBlock
   | RssSidebarBlock;
 
 // ─── Newsletter / State ──────────────────────────────────────────────────────

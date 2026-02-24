@@ -503,7 +503,7 @@ function renderTermOfMonth(b: any, t: Newsletter['theme']): string {
   const sections = [
     { title: 'Definition', content: b.definition },
     { title: 'Relevance to Medicine', content: b.relevance },
-    { title: 'Neurology Application', content: b.neurologyApplication },
+    { title: 'Clinical Application', content: b.clinicalApplication },
   ];
   return `
 <div style="padding:28px 40px">
@@ -648,7 +648,7 @@ function renderAiSafety(b: any, t: Newsletter['theme']): string {
 </div>`;
 }
 
-function renderNorthwellSpotlight(b: any, t: Newsletter['theme']): string {
+function renderInstitutionalSpotlight(b: any, t: Newsletter['theme']): string {
   const items = (b.items || []).slice(0, b.maxItems || 6).map((item: any) => `
 <div style="border:1px solid ${t.border};border-radius:10px;overflow:hidden;background:${t.surface};display:flex;flex-direction:column">
   ${item.imageUrl ? `<div style="height:120px;overflow:hidden"><img src="${esc(item.imageUrl)}" alt="${esc(item.title)}" style="width:100%;height:100%;object-fit:cover"></div>` : ''}
@@ -667,7 +667,7 @@ function renderNorthwellSpotlight(b: any, t: Newsletter['theme']): string {
 <div style="padding:28px 40px">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
     <div style="width:28px;height:28px;background:${t.primary};border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:14px">🏥</span></div>
-    <div style="font-family:${t.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${t.primary}">Northwell Health</div>
+    <div style="font-family:${t.fontMono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${t.primary}">${esc(b.institutionLabel || 'Your Institution')}</div>
   </div>
   <h2 style="font-family:${t.fontDisplay};font-size:26px;color:${t.text};margin:0 0 4px;font-weight:400">${esc(b.heading || '')}</h2>
   ${b.subheading ? `<p style="font-family:${t.fontBody};font-size:14px;color:${t.muted};margin:0 0 20px">${esc(b.subheading)}</p>` : ''}
@@ -759,7 +759,10 @@ function renderRssSidebar(b: any, t: Newsletter['theme']): string {
 }
 
 function renderFooter(b: any, t: Newsletter['theme']): string {
-  const contactHref = `mailto:yelsherif@northwell.edu?subject=${encodeURIComponent('Neurology AI Pulse Newsletter Suggestions/Comments')}`;
+  const contactEmail = b.contactEmail || '';
+  const contactHref = contactEmail
+    ? `mailto:${esc(contactEmail)}?subject=${encodeURIComponent('Newsletter Feedback')}`
+    : '#';
 
   return `
 <div class="nap-white-section" style="background:${t.primary};padding:44px 40px 36px;text-align:center;color:#fff">
@@ -1233,7 +1236,7 @@ function blockToHtml(block: Block, theme: Newsletter['theme']): string {
     case 'humor':                     return renderHumor(b, theme);
     case 'spacer':                    return renderSpacer(b, theme);
     case 'ai-safety':                 return renderAiSafety(b, theme);
-    case 'northwell-spotlight':       return renderNorthwellSpotlight(b, theme);
+    case 'institutional-spotlight':   return renderInstitutionalSpotlight(b, theme);
     case 'rss-sidebar':               return renderRssSidebar(b, theme);
     case 'footer':                    return renderFooter(b, theme);
     default:
@@ -1256,7 +1259,7 @@ export function exportToHtml(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(newsletter.meta?.title || 'Neurology AI Pulse')}</title>
+<title>${esc(newsletter.meta?.title || 'Newsletter')}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,300;1,9..40,400&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">

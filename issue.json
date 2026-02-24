@@ -1,0 +1,25 @@
+{
+  "issueNumber": 1,
+  "month": "March",
+  "year": 2026,
+  "dateLabel": "Mar 2026",
+  "path": "Issues/Mar2026/export_web/index.html#/preview",
+
+  "spotlight": {
+    "label": "Spotlight",
+    "title": "Deep Learning–Based Epileptic Seizure Detection from EEG + PPG Using LSTM/CNN",
+    "journal": "Int J Neurosci",
+    "oneLine": "Hybrid CNN+LSTM model fuses EEG with wearable PPG to improve seizure detection robustness and reduce false alarms for real-world monitoring.",
+    "ctaText": "Read the paper →",
+    "url": ""
+  },
+
+  "governance": {
+    "label": "AI Ethics & Governance",
+    "title": "To Use Your Brain, First Accept The Terms And Conditions: Legal Protections For Commercial Brain–Computer Interfaces",
+    "source": "Colorado Technology Law Journal",
+    "oneLine": "As neuro-AI moves into practice, consent, mental privacy, and cognitive autonomy are shifting from ethics to enforceable legal accountability.",
+    "ctaText": "Read the article →",
+    "url": "https://ctlj.colorado.edu/?p=1460"
+  }
+} 
