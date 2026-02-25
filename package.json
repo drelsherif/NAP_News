@@ -11,6 +11,7 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "export:web": "node scripts/export-web.mjs",
+    "export:web:zip": "node scripts/export-web-zip.mjs",
     "export:single": "node scripts/export-single-html.mjs"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
 import type { Newsletter, Block } from '../types';
+import { RUNTIME_JS } from './exportRuntime';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -792,7 +793,19 @@ function renderFooter(b: any, t: Newsletter['theme']): string {
 
 // ─── Runtime script ───────────────────────────────────────────────────────────
 
+// ─── Runtime script ───────────────────────────────────────────────────────────
+// Imported from exportRuntime.ts — single source of truth shared with viewer
+
 function runtimeScript(): string {
+  return `<script>
+${RUNTIME_JS.replace(/<\/script>/g, '<\\/script>')}
+<\/script>`;
+}
+
+// ─── OLD_RUNTIME_PLACEHOLDER ──────────────────────────────────────────────────
+// The following is the old inline runtime — kept temporarily for reference.
+// It will be removed once the import is verified working.
+function _oldRuntimeScript_UNUSED(): string {
   return `<script>
 (function(){
   'use strict';
@@ -1317,7 +1330,8 @@ export function downloadHtml(newsletter: Newsletter) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `nap-issue-${newsletter.meta?.issueNumber || 'draft'}.html`;
+  const num = (newsletter.meta?.issueNumber || 'draft').replace(/\s+/g, '');
+  a.download = `newsletter_issue${num}.html`;
   a.click();
   URL.revokeObjectURL(url);
 }

@@ -221,7 +221,6 @@ export default function App() {
         onToggleDrawer={() => setDrawerOpen(o => !o)}
         onSave={handleSave}
         onSaveVersion={handleSaveVersion}
-        onExportJson={() => exportJSON(newsletter)}
         onImport={handleImport}
         onTogglePreview={togglePreview}
         onZoomChange={setZoom}
